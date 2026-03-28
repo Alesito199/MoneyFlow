@@ -1,0 +1,122 @@
+{
+  "name": "MoneyFlow - Alertas Automáticas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "name": "Cada Hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://tudominio.com/api/status.php",
+        "options": {}
+      },
+      "name": "Obtener Estado MoneyFlow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.data.alerta}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "¿Hay Alerta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "TU_CHAT_ID_AQUI",
+        "text": "=🚨 *MoneyFlow - Alerta Financiera*\n\n{{$json.data.mensaje}}\n\n💰 *Saldo Actual:* {{$json.data.saldo_actual}} Gs\n💳 *Gourmet Disponible:* {{$json.data.gourmet_disponible}} Gs\n📊 *Estado:* {{$json.data.estado}}\n\n📈 *Análisis de Ritmo:*\nDía {{$json.data.analisis_ritmo.dia_actual}} de {{$json.data.analisis_ritmo.dias_totales}}\n{{$json.data.analisis_ritmo.mensaje}}",
+        "additionalFields": {
+          "parseMode": "Markdown"
+        }
+      },
+      "name": "Enviar Alerta Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        850,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cada Hora": {
+      "main": [
+        [
+          {
+            "node": "Obtener Estado MoneyFlow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Estado MoneyFlow": {
+      "main": [
+        [
+          {
+            "node": "¿Hay Alerta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay Alerta?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-03-28T12:00:00.000Z",
+  "versionId": "1"
+}

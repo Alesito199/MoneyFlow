@@ -1,0 +1,53 @@
+# MoneyFlow - Archivos a ignorar
+
+# Configuración sensible
+config/database.php
+
+# Logs
+*.log
+logs/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+*~
+
+# Composer
+/vendor/
+composer.phar
+composer.lock
+
+# Node modules (si se usa)
+node_modules/
+package-lock.json
+
+# Archivos temporales
+tmp/
+temp/
+cache/
+
+# Respaldos de base de datos
+*.sql.backup
+*.sql.gz
+backups/
+
+# Uploads (si se implementa)
+uploads/
+files/
+
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Testing
+phpunit.xml
+.phpunit.result.cache
