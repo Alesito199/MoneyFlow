@@ -17,7 +17,7 @@ if (!$estado) {
                 <code style='background: #f3f4f6; padding: 5px;'>mysql -u root -p moneyflaw < sql/schema.sql</code>
             </li>
         </ol>
-        <a href='../logout.php' style='display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;'>Cerrar Sesión</a>
+        <a href='../logout.php' style='display: inline-block; margin-top: 20px; padding: 10px 20px; background: #4b5563; color: white; text-decoration: none; border-radius: 5px;'>Cerrar Sesión</a>
     </div>
     ");
 }
@@ -49,7 +49,7 @@ $esAdmin = isAdmin();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - MoneyFlow</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=2.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -135,7 +135,7 @@ $esAdmin = isAdmin();
             <!-- KPIs Principales -->
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="kpi-icon" style="background: #4b5563;">
                         <i class="fas fa-wallet"></i>
                     </div>
                     <div class="kpi-content">
@@ -146,7 +146,7 @@ $esAdmin = isAdmin();
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="kpi-icon" style="background: #6b7280;">
                         <i class="fas fa-piggy-bank"></i>
                     </div>
                     <div class="kpi-content">
@@ -157,7 +157,7 @@ $esAdmin = isAdmin();
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="kpi-icon" style="background: #4b5563;">
                         <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                     <div class="kpi-content">
@@ -168,7 +168,7 @@ $esAdmin = isAdmin();
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <div class="kpi-icon" style="background: #6b7280;">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
                     <div class="kpi-content">
@@ -179,7 +179,7 @@ $esAdmin = isAdmin();
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="kpi-icon" style="background: #4b5563;">
                         <i class="fas fa-hand-holding-usd"></i>
                     </div>
                     <div class="kpi-content">
@@ -190,7 +190,7 @@ $esAdmin = isAdmin();
                 </div>
 
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, <?php echo $estado['disponible_real'] >= 0 ? '#11998e 0%, #38ef7d 100%' : '#eb3349 0%, #f45c43 100%'; ?>);">
+                    <div class="kpi-icon" style="background: <?php echo $estado['disponible_real'] >= 0 ? '#4b5563' : '#dc2626'; ?>;">
                         <i class="fas fa-<?php echo $estado['disponible_real'] >= 0 ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
                     </div>
                     <div class="kpi-content">
@@ -204,7 +204,7 @@ $esAdmin = isAdmin();
             </div>
 
             <!-- Presupuesto Diario (Destacado) -->
-            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+            <div class="card" style="background: linear-gradient(135deg, #4b5563 0%, #374151 100%); color: white; border: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);">
                 <div style="padding: 30px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 style="margin: 0; color: white;">

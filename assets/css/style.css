@@ -5,17 +5,17 @@
 
 /* Variables CSS */
 :root {
-    --primary: #4a5568;
-    --secondary: #718096;
-    --dark: #2d3748;
-    --light: #f7fafc;
+    --primary: #4b5563;
+    --secondary: #6b7280;
+    --dark: #1f2937;
+    --light: #f3f4f6;
     --white: #ffffff;
-    --border: #e2e8f0;
-    --text: #2d3748;
-    --text-light: #718096;
-    --success: #48bb78;
-    --warning: #ed8936;
-    --danger: #f56565;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --text-light: #6b7280;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -43,7 +43,7 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
 }
 
 .login-container {
@@ -463,8 +463,8 @@ body {
 }
 
 .badge-fijo {
-    background: #e9d5ff;
-    color: #5b21b6;
+    background: #e5e7eb;
+    color: #374151;
 }
 
 .badge-variable {

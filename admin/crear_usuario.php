@@ -135,7 +135,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -154,7 +154,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
         .header h1 {
-            color: #667eea;
+            color: #1f2937;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -224,7 +224,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4b5563;
         }
         
         .form-row {
@@ -234,7 +234,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
         .btn-submit {
-            background: #667eea;
+            background: #4b5563;
             color: white;
             padding: 12px 30px;
             border: none;

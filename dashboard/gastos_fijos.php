@@ -55,7 +55,7 @@ $totalGastosFijos = calcularTotalGastosFijos();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gastos Fijos - MoneyFlow</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=2.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -123,7 +123,7 @@ $totalGastosFijos = calcularTotalGastosFijos();
             <!-- Resumen -->
             <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); margin-bottom: 30px;">
                 <div class="kpi-card">
-                    <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="kpi-icon" style="background: #4b5563;">
                         <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                     <div class="kpi-content">

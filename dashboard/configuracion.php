@@ -44,7 +44,7 @@ $verificarReinicio = verificarReinicioPeriodo();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración - MoneyFlow</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=2.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -103,7 +103,7 @@ $verificarReinicio = verificarReinicioPeriodo();
             </div>
 
             <?php if ($verificarReinicio['debe_reiniciar']): ?>
-                <div class="alert" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                <div class="alert" style="background: linear-gradient(135deg, #4b5563 0%, #374151 100%); color: white; border: none;">
                     <i class="fas fa-magic"></i>
                     <div style="flex: 1;">
                         <strong>🎉 ¡Hoy es día 25! Nuevo periodo disponible</strong><br>
@@ -111,7 +111,7 @@ $verificarReinicio = verificarReinicioPeriodo();
                             El sistema puede configurar automáticamente tu nuevo periodo desde hoy hasta el 24 del próximo mes.
                         </span>
                     </div>
-                    <button onclick="autoConfigurarPeriodo()" class="btn" style="background: white; color: #667eea; border: none;">
+                    <button onclick="autoConfigurarPeriodo()" class="btn" style="background: white; color: #4b5563; border: none;">
                         <i class="fas fa-bolt"></i> Configurar Automáticamente
                     </button>
                 </div>
@@ -254,7 +254,7 @@ $verificarReinicio = verificarReinicioPeriodo();
                         <th><strong>Disponible para Gastos Variables</strong></th>
                         <td><strong><?php echo formatearMoneda($config['ingreso_mensual'] - $config['monto_ahorro'] - calcularTotalGastosFijos()); ?></strong></td>
                     </tr>
-                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <tr style="background: linear-gradient(135deg, #4b5563 0%, #374151 100%); color: white;">
                         <th style="color: white;"><strong><i class="fas fa-calendar-day"></i> PRESUPUESTO DIARIO</strong></th>
                         <td style="color: white;">
                             <strong style="font-size: 18px;">
