@@ -32,21 +32,23 @@ define('FORMATO_FECHA_SQL', 'Y-m-d');
 
 // Categorías permitidas
 define('CATEGORIAS', [
-    'electricidad' => 'Electricidad',
+    'comida' => 'Comida',
     'transporte' => 'Transporte',
-    'supermercado' => 'Supermercado',
+    'salud' => 'Salud',
+    'entretenimiento' => 'Entretenimiento',
     'servicios' => 'Servicios',
     'otros' => 'Otros'
 ]);
 
 // Tipos de gasto
 define('TIPOS_GASTO', [
-    'fijo' => 'Fijo',
-    'variable' => 'Variable'
+    'necesario' => 'Necesario',
+    'opcional' => 'Opcional',
+    'emergencia' => 'Emergencia'
 ]);
 
 // Métodos de pago
 define('METODOS_PAGO', [
     'efectivo' => 'Efectivo',
-    'gourmet' => 'Tarjeta Gourmet'
+    'gourmet' => 'Gourmet'
 ]);

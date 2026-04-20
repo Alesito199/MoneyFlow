@@ -3,17 +3,17 @@
  * MoneyFlow - Configuración de Base de Datos (EJEMPLO)
  * 
  * INSTRUCCIONES:
- * 1. Renombra este archivo a "database.php"
- * 2. Completa los valores con tu configuración real
- * 3. NO commitees el archivo database.php al repositorio
+ * 1. Renombra este archivo a: database.php
+ * 2. Modifica los valores según tu servidor
+ * 3. Asegúrate que este archivo NO se suba a repositorio público
  */
 
 class Database {
-    // Configuración de conexión
-    private $host = 'localhost';          // Host de MySQL
-    private $db_name = 'moneyflow';       // Nombre de la base de datos
-    private $username = 'root';           // Usuario de MySQL (CAMBIAR)
-    private $password = '';               // Contraseña de MySQL (CAMBIAR)
+    // Configuración del servidor de base de datos
+    private $host = 'localhost';           // Cambiar por tu host (ej: localhost, 127.0.0.1, IP del servidor)
+    private $db_name = 'moneyflaw';        // Nombre de la base de datos
+    private $username = 'root';            // Usuario de MySQL
+    private $password = '';                // Contraseña de MySQL
     private $charset = 'utf8mb4';
     private $conn = null;
     
@@ -52,4 +52,13 @@ class Database {
     public function closeConnection() {
         $this->conn = null;
     }
+}
+
+/**
+ * Función helper para obtener conexión fácilmente
+ * @return PDO
+ */
+function getDBConnection() {
+    $database = new Database();
+    return $database->getConnection();
 }

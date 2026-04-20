@@ -1,21 +1,47 @@
 <?php
-/**
- * MoneyFlow - Dashboard Principal
- */
-
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 
-// Obtener estado financiero completo
+// Obtener estado financiero del usuario logueado
 $estado = calcularEstadoFinanciero();
 
 if (!$estado) {
-    die("Error: No se pudo cargar la configuración del sistema.");
+    $userId = getUserId();
+    die("
+    <div style='font-family: Arial; padding: 40px; text-align: center;'>
+        <h2 style='color: #dc2626;'>❌ Error de Configuración</h2>
+        <p>No se encontró configuración para tu usuario (ID: {$userId})</p>
+        <h3 style='margin-top: 30px;'>Posibles soluciones:</h3>
+        <ol style='text-align: left; max-width: 600px; margin: 20px auto;'>
+            <li><strong>Reimportar la base de datos:</strong><br>
+                <code style='background: #f3f4f6; padding: 5px;'>mysql -u root -p moneyflaw < sql/schema.sql</code>
+            </li>
+        </ol>
+        <a href='../logout.php' style='display: inline-block; margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;'>Cerrar Sesión</a>
+    </div>
+    ");
 }
 
-// Obtener datos para gráficos
+// Obtener análisis de ritmo
+$ritmo = analizarRitmoGasto();
+
+// Obtener gastos recientes (últimos 10)
+$gastosRecientes = obtenerGastosRecientes(null, 10);
+
+// Obtener gastos por categoría para el gráfico
 $gastosPorCategoria = obtenerGastosPorCategoria($estado['fecha_inicio'], $estado['fecha_fin']);
-$evolucionDiaria = obtenerEvolucionDiaria($estado['fecha_inicio'], $estado['fecha_fin']);
-$gastosRecientes = obtenerGastos($estado['fecha_inicio'], $estado['fecha_fin']);
+
+// Obtener presupuesto diario
+$presupuestoDiario = calcularPresupuestoDiario();
+
+// Obtener resumen semanal
+$resumenSemanal = calcularResumenSemanal();
+
+// Verificar si es tiempo de reiniciar
+$verificarReinicio = verificarReinicioPeriodo();
+
+// Verificar si el usuario es admin
+$esAdmin = isAdmin();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -24,260 +50,540 @@ $gastosRecientes = obtenerGastos($estado['fecha_inicio'], $estado['fecha_fin']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - MoneyFlow</title>
     <link rel="stylesheet" href="../assets/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>💰 MoneyFlow</h1>
-            <div class="nav-links">
-                <a href="index.php" class="active">Dashboard</a>
-                <a href="../forms/add_expense.php">Nuevo Gasto</a>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-wallet"></i>
+                <h2>MoneyFlow</h2>
+            </div>
+            
+            <div class="sidebar-menu">
+                <a href="index.php" class="menu-item active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="../forms/add_expense.php" class="menu-item">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Agregar Gasto</span>
+                </a>
+                <a href="expenses.php" class="menu-item">
+                    <i class="fas fa-list"></i>
+                    <span>Gastos Variables</span>
+                </a>
+                <a href="gastos_fijos.php" class="menu-item">
+                    <i class="fas fa-receipt"></i>
+                    <span>Gastos Fijos</span>
+                </a>
+                <a href="configuracion.php" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <?php echo strtoupper(substr(getUsername(), 0, 1)); ?>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name"><?php echo getUsername(); ?></div>
+                        <div class="user-role"><?php echo $esAdmin ? 'Administrador' : 'Usuario'; ?></div>
+                    </div>
+                </div>
+                <a href="../logout.php" class="btn btn-secondary btn-block">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
             </div>
         </nav>
 
-        <!-- Alerta de estado -->
-        <?php if ($estado['estado'] === 'ALERTA' || $estado['estado'] === 'ALERTA_AVANZADA'): ?>
-            <div class="alert alert-danger">
-                <strong>⚠️ ALERTA:</strong> 
-                <?php if ($estado['estado'] === 'ALERTA_AVANZADA'): ?>
-                    <?php echo $estado['analisis_ritmo']['mensaje']; ?>
-                <?php else: ?>
-                    Tu saldo está por debajo del mínimo recomendado (<?php echo formatearMoneda(ALERTA_SALDO_MINIMO); ?>)
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p>Vista general de tus finanzas personales</p>
+            </div>
+
+            <!-- Alerta de Reinicio de Periodo -->
+            <?php if ($verificarReinicio['debe_reiniciar']): ?>
+                <div class="alert alert-warning">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div>
+                        <strong>¡Hoy es día 25!</strong> Es momento de iniciar un nuevo periodo de control.
+                        <a href="configuracion.php" style="color: inherit; text-decoration: underline; font-weight: bold;">
+                            Ir a Configuración →
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Alerta de Ritmo de Gasto -->
+            <?php if ($ritmo['en_riesgo']): ?>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Alerta:</strong> <?php echo $ritmo['mensaje']; ?>. 
+                        Has gastado <?php echo formatearMoneda($ritmo['gasto_real']); ?> 
+                        y se esperaba <?php echo formatearMoneda($ritmo['gasto_esperado']); ?>.
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- KPIs Principales -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Ingreso Mensual</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['ingreso_mensual']); ?></div>
+                        <div class="kpi-label">Ingresos del mes</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Ahorro</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['monto_ahorro']); ?></div>
+                        <div class="kpi-label">Meta de ahorro mensual</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Gastos Fijos</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['gastos_fijos']); ?></div>
+                        <div class="kpi-label">Total mensual</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Gastos Variables</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['gastos_variables']); ?></div>
+                        <div class="kpi-label">Del periodo actual</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Disponible</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['disponible']); ?></div>
+                        <div class="kpi-label">Ingreso - Ahorro</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, <?php echo $estado['disponible_real'] >= 0 ? '#11998e 0%, #38ef7d 100%' : '#eb3349 0%, #f45c43 100%'; ?>);">
+                        <i class="fas fa-<?php echo $estado['disponible_real'] >= 0 ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Disponible Real</h3>
+                        <div class="kpi-value" style="color: <?php echo $estado['disponible_real'] >= 0 ? '#10b981' : '#ef4444'; ?>">
+                            <?php echo formatearMoneda($estado['disponible_real']); ?>
+                        </div>
+                        <div class="kpi-label">Después de gastos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presupuesto Diario (Destacado) -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                <div style="padding: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: white;">
+                            <i class="fas fa-calendar-day"></i> Presupuesto de HOY
+                        </h2>
+                        <span style="font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px;">
+                            <?php echo date('d/m/Y'); ?>
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                        <!-- Presupuesto Diario -->
+                        <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
+                                <i class="fas fa-coins"></i> Puedes gastar hoy
+                            </div>
+                            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;">
+                                <?php echo formatearMoneda($presupuestoDiario['presupuesto_diario']); ?>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.8;">
+                                Presupuesto diario
+                            </div>
+                        </div>
+
+                        <!-- Gastado Hoy -->
+                        <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
+                                <i class="fas fa-receipt"></i> Ya gastaste
+                            </div>
+                            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px; color: <?php echo $presupuestoDiario['dentro_presupuesto'] ? '#fff' : '#ffeb3b'; ?>;">
+                                <?php echo formatearMoneda($presupuestoDiario['gastado_hoy']); ?>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.8;">
+                                <?php echo round($presupuestoDiario['porcentaje_usado_hoy'], 1); ?>% del presupuesto
+                            </div>
+                        </div>
+
+                        <!-- Disponible Hoy -->
+                        <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
+                                <i class="fas fa-wallet"></i> Te queda por hoy
+                            </div>
+                            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px; color: <?php echo $presupuestoDiario['disponible_hoy'] >= 0 ? '#4ade80' : '#f87171'; ?>;">
+                                <?php echo formatearMoneda(max(0, $presupuestoDiario['disponible_hoy'])); ?>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.8;">
+                                <?php if ($presupuestoDiario['disponible_hoy'] < 0): ?>
+                                    ⚠️ Excediste el límite
+                                <?php else: ?>
+                                    ✅ <?php echo $presupuestoDiario['mensaje']; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Días Restantes -->
+                        <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">
+                                <i class="fas fa-calendar-check"></i> Días restantes
+                            </div>
+                            <div style="font-size: 32px; font-weight: 700; margin-bottom: 5px;">
+                                <?php echo $presupuestoDiario['dias_restantes']; ?> días
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.8;">
+                                Hasta el próximo periodo
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de progreso del día -->
+                    <div style="margin-top: 25px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                            <span>Progreso del gasto de hoy</span>
+                            <span><strong><?php echo round($presupuestoDiario['porcentaje_usado_hoy'], 1); ?>%</strong></span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden;">
+                            <div style="background: <?php echo $presupuestoDiario['dentro_presupuesto'] ? 'linear-gradient(90deg, #4ade80, #22c55e)' : 'linear-gradient(90deg, #fbbf24, #f59e0b)'; ?>; 
+                                        height: 100%; width: <?php echo min(100, $presupuestoDiario['porcentaje_usado_hoy']); ?>%; 
+                                        transition: width 0.5s ease; border-radius: 10px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen Semanal -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i> Resumen de los Últimos 7 Días
+                    </h3>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">Presupuesto Semanal</div>
+                        <div class="stat-value"><?php echo formatearMoneda($resumenSemanal['presupuesto_semanal']); ?></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Gastado últimos 7 días</div>
+                        <div class="stat-value" style="color: <?php echo $resumenSemanal['dentro_presupuesto'] ? 'var(--success)' : 'var(--danger)'; ?>">
+                            <?php echo formatearMoneda($resumenSemanal['gastado_semanal']); ?>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Disponible Semanal</div>
+                        <div class="stat-value">
+                            <?php echo formatearMoneda(max(0, $resumenSemanal['disponible_semanal'])); ?>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">% Usado</div>
+                        <div class="stat-value">
+                            <?php echo round($resumenSemanal['porcentaje_usado'], 1); ?>%
+                            <?php if ($resumenSemanal['dentro_presupuesto']): ?>
+                                <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                            <?php else: ?>
+                                <i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Gastos por Categoría -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Gastos por Categoría
+                    </h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gastosChart"></canvas>
+                </div>
+                <?php if (empty($gastosPorCategoria)): ?>
+                    <div class="empty-state">
+                        <i class="fas fa-chart-bar"></i>
+                        <p>No hay gastos para mostrar en el gráfico</p>
+                    </div>
                 <?php endif; ?>
             </div>
-        <?php endif; ?>
 
-        <!-- KPIs Principales -->
-        <div class="kpi-grid">
-            <div class="kpi-card <?php echo $estado['estado'] !== 'OK' ? 'kpi-alert' : ''; ?>">
-                <div class="kpi-icon">💵</div>
-                <div class="kpi-content">
-                    <h3>Saldo Actual</h3>
-                    <p class="kpi-value"><?php echo formatearMoneda($estado['saldo_actual']); ?></p>
-                    <small>De <?php echo formatearMoneda($estado['saldo_inicial']); ?> inicial</small>
-                </div>
-            </div>
-
-            <div class="kpi-card">
-                <div class="kpi-icon">💳</div>
-                <div class="kpi-content">
-                    <h3>Gourmet Disponible</h3>
-                    <p class="kpi-value"><?php echo formatearMoneda($estado['gourmet_disponible']); ?></p>
-                    <small>De <?php echo formatearMoneda($estado['gourmet_inicial']); ?> inicial</small>
-                </div>
-            </div>
-
-            <div class="kpi-card">
-                <div class="kpi-icon">📊</div>
-                <div class="kpi-content">
-                    <h3>Total Gastado</h3>
-                    <p class="kpi-value"><?php echo formatearMoneda($estado['gastos_totales']); ?></p>
-                    <small>
-                        Efectivo: <?php echo formatearMoneda($estado['gastos_efectivo']); ?> | 
-                        Gourmet: <?php echo formatearMoneda($estado['gastos_gourmet']); ?>
-                    </small>
-                </div>
-            </div>
-
-            <div class="kpi-card kpi-success">
-                <div class="kpi-icon">🎯</div>
-                <div class="kpi-content">
-                    <h3>Ahorro Proyectado</h3>
-                    <p class="kpi-value"><?php echo formatearMoneda($estado['ahorro_actual']); ?></p>
-                    <small>
-                        Objetivo: <?php echo formatearMoneda($estado['objetivo_ahorro']); ?>
-                        (<?php echo $estado['porcentaje_ahorro']; ?>%)
-                    </small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Barra de Progreso del Ahorro -->
-        <div class="card">
-            <h3>Progreso del Ahorro</h3>
-            <div class="progress-container">
-                <div class="progress-bar" style="width: <?php echo min(100, $estado['porcentaje_ahorro']); ?>%"></div>
-            </div>
-            <p class="progress-text">
-                <?php echo $estado['porcentaje_ahorro']; ?>% del objetivo completado
-            </p>
-        </div>
-
-        <!-- Análisis de Ritmo de Gasto -->
-        <div class="card">
-            <h3>📈 Análisis de Ritmo de Gasto</h3>
-            <div class="analisis-grid">
-                <div class="analisis-item">
-                    <strong>Día del Periodo:</strong>
-                    <span><?php echo $estado['analisis_ritmo']['dia_actual']; ?> de <?php echo $estado['analisis_ritmo']['dias_totales']; ?></span>
-                </div>
-                <div class="analisis-item">
-                    <strong>Progreso Temporal:</strong>
-                    <span><?php echo $estado['analisis_ritmo']['porcentaje_periodo']; ?>%</span>
-                </div>
-                <div class="analisis-item">
-                    <strong>Gasto Esperado:</strong>
-                    <span><?php echo formatearMoneda($estado['analisis_ritmo']['gasto_esperado']); ?></span>
-                </div>
-                <div class="analisis-item">
-                    <strong>Gasto Real:</strong>
-                    <span><?php echo formatearMoneda($estado['analisis_ritmo']['gasto_real']); ?></span>
-                </div>
-                <div class="analisis-item <?php echo $estado['analisis_ritmo']['alerta_avanzada'] ? 'text-danger' : 'text-success'; ?>">
-                    <strong>Estado:</strong>
-                    <span><?php echo $estado['analisis_ritmo']['mensaje']; ?></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gráficos -->
-        <div class="charts-grid">
+            <!-- Progreso de Ahorro -->
             <div class="card">
-                <h3>Gastos por Categoría</h3>
-                <canvas id="chartCategoria"></canvas>
-            </div>
-
-            <div class="card">
-                <h3>Evolución Diaria</h3>
-                <canvas id="chartEvolucion"></canvas>
-            </div>
-        </div>
-
-        <!-- Tabla de Gastos Recientes -->
-        <div class="card">
-            <h3>Últimos Gastos Registrados</h3>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Categoría</th>
-                            <th>Descripción</th>
-                            <th>Tipo</th>
-                            <th>Método</th>
-                            <th>Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($gastosRecientes)): ?>
-                            <tr>
-                                <td colspan="6" class="text-center">No hay gastos registrados</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach (array_slice($gastosRecientes, 0, 10) as $gasto): ?>
-                                <tr>
-                                    <td><?php echo date('d/m/Y', strtotime($gasto['fecha'])); ?></td>
-                                    <td>
-                                        <span class="badge badge-categoria">
-                                            <?php echo CATEGORIAS[$gasto['categoria']]; ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($gasto['descripcion']); ?></td>
-                                    <td><?php echo TIPOS_GASTO[$gasto['tipo']]; ?></td>
-                                    <td>
-                                        <span class="badge badge-<?php echo $gasto['metodo']; ?>">
-                                            <?php echo METODOS_PAGO[$gasto['metodo']]; ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-right"><?php echo formatearMoneda($gasto['monto']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-piggy-bank"></i> Progreso del Ahorro
+                    </h3>
+                    <span>
+                        <?php 
+                        // Evitar división por cero
+                        $progreso = ($estado['objetivo_ahorro'] > 0) 
+                            ? ($estado['ahorro_actual'] / $estado['objetivo_ahorro']) * 100 
+                            : 0;
+                        echo round(max(0, min(100, $progreso)), 1); 
+                        ?>%
+                    </span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: <?php echo min(100, max(0, $progreso)); ?>%">
+                        <?php if ($progreso > 10): ?>
+                            <?php echo round($progreso, 1); ?>%
                         <?php endif; ?>
-                    </tbody>
-                </table>
+                    </div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">Objetivo</div>
+                        <div class="stat-value"><?php echo formatearMoneda($estado['objetivo_ahorro']); ?></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Actual</div>
+                        <div class="stat-value"><?php echo formatearMoneda(max(0, $estado['ahorro_actual'])); ?></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Faltante</div>
+                        <div class="stat-value">
+                            <?php 
+                            $faltante = $estado['objetivo_ahorro'] - $estado['ahorro_actual'];
+                            echo formatearMoneda(max(0, $faltante)); 
+                            ?>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <!-- Análisis de Ritmo -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-tachometer-alt"></i> Análisis de Ritmo de Gasto
+                    </h3>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">Día del Periodo</div>
+                        <div class="stat-value">
+                            <?php echo $ritmo['dias_transcurridos']; ?>/<?php echo $ritmo['dias_totales']; ?>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Gasto Esperado</div>
+                        <div class="stat-value"><?php echo formatearMoneda($ritmo['gasto_esperado']); ?></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Gasto Real</div>
+                        <div class="stat-value"><?php echo formatearMoneda($ritmo['gasto_real']); ?></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Diferencia</div>
+                        <div class="stat-value" style="color: <?php echo $ritmo['en_riesgo'] ? 'var(--danger)' : 'var(--success)'; ?>">
+                            <?php echo formatearMoneda(abs($ritmo['diferencia'])); ?>
+                            <?php if ($ritmo['diferencia'] > 0): ?>
+                                <i class="fas fa-arrow-up"></i>
+                            <?php else: ?>
+                                <i class="fas fa-arrow-down"></i>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: var(--light); border-radius: 6px; text-align: center;">
+                    <i class="fas fa-<?php echo $ritmo['en_riesgo'] ? 'exclamation-circle' : 'check-circle'; ?>" 
+                       style="color: <?php echo $ritmo['en_riesgo'] ? 'var(--warning)' : 'var(--success)'; ?>; 
+                       margin-right: 8px;"></i>
+                    <strong><?php echo $ritmo['mensaje']; ?></strong>
+                </div>
+            </div>
+
+            <!-- Últimos Gastos -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i> Últimos Gastos
+                    </h3>
+                    <a href="../forms/add_expense.php" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nuevo Gasto
+                    </a>
+                </div>
+
+                <?php if (empty($gastosRecientes)): ?>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No hay gastos registrados</h3>
+                        <p>Comienza registrando tu primer gasto</p>
+                        <a href="../forms/add_expense.php" class="btn btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-plus"></i> Registrar Gasto
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Método</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($gastosRecientes as $gasto): ?>
+                                    <tr>
+                                        <td><?php echo date('d/m/Y', strtotime($gasto['fecha'])); ?></td>
+                                        <td>
+                                            <?php 
+                                            $tipo = $gasto['tipo'] ?? 'necesario';
+                                            if (isset(TIPOS_GASTO[$tipo])):
+                                            ?>
+                                                <span class="badge badge-<?php echo htmlspecialchars($tipo); ?>">
+                                                    <?php echo TIPOS_GASTO[$tipo]; ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-necesario">Sin tipo</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo CATEGORIAS[$gasto['categoria']] ?? htmlspecialchars($gasto['categoria']); ?></td>
+                                        <td><?php echo htmlspecialchars($gasto['descripcion'] ?? ''); ?></td>
+                                        <td>
+                                            <?php 
+                                            $metodo = $gasto['metodo'] ?? 'efectivo';
+                                            if (isset(METODOS_PAGO[$metodo])):
+                                            ?>
+                                                <span class="badge badge-<?php echo htmlspecialchars($metodo); ?>">
+                                                    <?php echo METODOS_PAGO[$metodo]; ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-efectivo">Sin método</span>
+                                            <?php endif; ?>
+                                        </td>
+                                            </span>
+                                        </td>
+                                        <td class="text-right"><strong><?php echo formatearMoneda($gasto['monto']); ?></strong></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="padding: 15px; text-align: center;">
+                        <a href="expenses.php" class="btn btn-secondary">
+                            <i class="fas fa-list"></i> Ver Todos los Gastos
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </main>
     </div>
 
-    <script src="../assets/js/main.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Datos para gráficos
-        const categorias = <?php echo json_encode(array_column($gastosPorCategoria, 'categoria')); ?>;
-        const montosCategoria = <?php echo json_encode(array_column($gastosPorCategoria, 'total')); ?>;
+        // Datos para el gráfico de gastos por categoría
+        <?php if (!empty($gastosPorCategoria)): ?>
+        const ctx = document.getElementById('gastosChart');
         
-        const fechasEvolucion = <?php echo json_encode(array_column($evolucionDiaria, 'fecha')); ?>;
-        const efectivoEvolucion = <?php echo json_encode(array_column($evolucionDiaria, 'efectivo')); ?>;
-        const gourmetEvolucion = <?php echo json_encode(array_column($evolucionDiaria, 'gourmet')); ?>;
+        const categorias = <?php echo json_encode(array_map(function($g) {
+            $nombres = [
+                'comida' => 'Comida',
+                'transporte' => 'Transporte',
+                'salud' => 'Salud',
+                'entretenimiento' => 'Entretenimiento',
+                'servicios' => 'Servicios',
+                'otros' => 'Otros'
+            ];
+            return $nombres[$g['categoria']] ?? $g['categoria'];
+        }, $gastosPorCategoria)); ?>;
+        
+        const montos = <?php echo json_encode(array_map(function($g) {
+            return floatval($g['total']);
+        }, $gastosPorCategoria)); ?>;
 
-        // Gráfico de Categorías (Pie)
-        const ctxCategoria = document.getElementById('chartCategoria').getContext('2d');
-        new Chart(ctxCategoria, {
+        const colores = [
+            'rgba(102, 126, 234, 0.8)',
+            'rgba(118, 75, 162, 0.8)',
+            'rgba(237, 100, 166, 0.8)',
+            'rgba(255, 154, 158, 0.8)',
+            'rgba(250, 208, 196, 0.8)',
+            'rgba(155, 93, 229, 0.8)'
+        ];
+
+        new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: categorias.map(cat => {
-                    const nombres = {
-                        'electricidad': 'Electricidad',
-                        'transporte': 'Transporte',
-                        'supermercado': 'Supermercado',
-                        'servicios': 'Servicios',
-                        'otros': 'Otros'
-                    };
-                    return nombres[cat] || cat;
-                }),
+                labels: categorias,
                 datasets: [{
-                    data: montosCategoria,
-                    backgroundColor: [
-                        '#FF6384',
-                        '#36A2EB',
-                        '#FFCE56',
-                        '#4BC0C0',
-                        '#9966FF'
-                    ]
+                    label: 'Monto Gastado',
+                    data: montos,
+                    backgroundColor: colores,
+                    borderColor: '#fff',
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Gráfico de Evolución (Líneas)
-        const ctxEvolucion = document.getElementById('chartEvolucion').getContext('2d');
-        new Chart(ctxEvolucion, {
-            type: 'line',
-            data: {
-                labels: fechasEvolucion.map(fecha => {
-                    const d = new Date(fecha + 'T00:00:00');
-                    return d.getDate() + '/' + (d.getMonth() + 1);
-                }),
-                datasets: [
-                    {
-                        label: 'Efectivo',
-                        data: efectivoEvolucion,
-                        borderColor: '#36A2EB',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        tension: 0.4
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 13
+                            }
+                        }
                     },
-                    {
-                        label: 'Gourmet',
-                        data: gourmetEvolucion,
-                        borderColor: '#FF6384',
-                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += new Intl.NumberFormat('es-PY').format(context.parsed) + ' Gs.';
+                                return label;
+                            }
+                        }
                     }
                 }
             }
         });
+        <?php endif; ?>
     </script>
 </body>
 </html>

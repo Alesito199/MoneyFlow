@@ -1,41 +1,27 @@
 <?php
-/**
- * MoneyFlow - Formulario de Registro de Gastos
- */
-
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 $mensaje = '';
-$tipoMensaje = '';
+$tipo_mensaje = '';
 
 // Procesar formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $datos = [
-        'fecha' => sanitizar($_POST['fecha']),
-        'tipo' => sanitizar($_POST['tipo']),
-        'categoria' => sanitizar($_POST['categoria']),
-        'descripcion' => sanitizar($_POST['descripcion']),
-        'monto' => floatval($_POST['monto']),
-        'metodo' => sanitizar($_POST['metodo'])
-    ];
+    $resultado = registrarGasto(
+        $_POST['tipo'],
+        $_POST['categoria'],
+        $_POST['metodo'],
+        floatval($_POST['monto']),
+        $_POST['descripcion'],
+        $_POST['fecha']
+    );
     
-    // Validaciones del lado del servidor
-    if (empty($datos['fecha']) || empty($datos['tipo']) || empty($datos['categoria']) || 
-        empty($datos['descripcion']) || $datos['monto'] <= 0 || empty($datos['metodo'])) {
-        $mensaje = 'Todos los campos son obligatorios y el monto debe ser mayor a 0';
-        $tipoMensaje = 'error';
+    if ($resultado) {
+        $mensaje = 'Gasto registrado exitosamente';
+        $tipo_mensaje = 'success';
     } else {
-        $resultado = registrarGasto($datos);
-        
-        if ($resultado) {
-            $mensaje = 'Gasto registrado exitosamente';
-            $tipoMensaje = 'success';
-            // Limpiar formulario
-            $_POST = [];
-        } else {
-            $mensaje = 'Error al registrar el gasto. Intenta nuevamente.';
-            $tipoMensaje = 'error';
-        }
+        $mensaje = 'Error al registrar el gasto';
+        $tipo_mensaje = 'error';
     }
 }
 ?>
@@ -44,57 +30,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Gasto - MoneyFlow</title>
+    <title>Ingresar Gasto - MoneyFlow</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>💰 MoneyFlow</h1>
-            <div class="nav-links">
-                <a href="../dashboard/">Dashboard</a>
-                <a href="add_expense.php" class="active">Nuevo Gasto</a>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-wallet"></i>
+                <h2>MoneyFlow</h2>
+            </div>
+            
+            <div class="sidebar-menu">
+                <a href="../dashboard/index.php" class="menu-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="add_expense.php" class="menu-item active">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Agregar Gasto</span>
+                </a>
+                <a href="../dashboard/expenses.php" class="menu-item">
+                    <i class="fas fa-list"></i>
+                    <span>Gastos Variables</span>
+                </a>
+                <a href="../dashboard/gastos_fijos.php" class="menu-item">
+                    <i class="fas fa-receipt"></i>
+                    <span>Gastos Fijos</span>
+                </a>
+                <a href="../dashboard/configuracion.php" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <?php echo strtoupper(substr(getUsername(), 0, 1)); ?>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name"><?php echo getUsername(); ?></div>
+                        <div class="user-role">Administrador</div>
+                    </div>
+                </div>
+                <a href="../logout.php" class="btn btn-secondary btn-block">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
             </div>
         </nav>
 
-        <div class="content">
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Registrar Nuevo Gasto</h1>
+                <p>Ingresa los detalles del gasto</p>
+            </div>
+
+            <?php if ($mensaje): ?>
+                <div class="alert alert-<?php echo $tipo_mensaje; ?>">
+                    <i class="fas fa-<?php echo $tipo_mensaje === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
+                    <?php echo $mensaje; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="card">
-                <h2>📝 Registrar Nuevo Gasto</h2>
-                
-                <?php if ($mensaje): ?>
-                    <div class="alert alert-<?php echo $tipoMensaje; ?>">
-                        <?php echo $mensaje; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-receipt"></i> Detalles del Gasto
+                    </h3>
+                </div>
 
-                <form method="POST" action="" id="formGasto" class="form-gasto">
+                <form method="POST" action="" class="form">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="fecha">Fecha *</label>
-                            <input type="date" 
-                                   id="fecha" 
-                                   name="fecha" 
-                                   value="<?php echo date('Y-m-d'); ?>" 
-                                   required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="monto">Monto (Gs) *</label>
-                            <input type="number" 
-                                   id="monto" 
-                                   name="monto" 
-                                   placeholder="Ej: 50000" 
-                                   step="0.01"
-                                   min="0"
-                                   required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="tipo">Tipo de Gasto *</label>
+                            <label for="tipo">
+                                <i class="fas fa-tag"></i> Tipo de Gasto *
+                            </label>
                             <select id="tipo" name="tipo" required>
-                                <option value="">Selecciona...</option>
+                                <option value="">Seleccionar...</option>
                                 <?php foreach (TIPOS_GASTO as $key => $value): ?>
                                     <option value="<?php echo $key; ?>"><?php echo $value; ?></option>
                                 <?php endforeach; ?>
@@ -102,9 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div class="form-group">
-                            <label for="categoria">Categoría *</label>
+                            <label for="categoria">
+                                <i class="fas fa-folder"></i> Categoría *
+                            </label>
                             <select id="categoria" name="categoria" required>
-                                <option value="">Selecciona...</option>
+                                <option value="">Seleccionar...</option>
                                 <?php foreach (CATEGORIAS as $key => $value): ?>
                                     <option value="<?php echo $key; ?>"><?php echo $value; ?></option>
                                 <?php endforeach; ?>
@@ -113,73 +131,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group full-width">
-                            <label for="metodo">Método de Pago *</label>
-                            <div class="radio-group">
+                        <div class="form-group">
+                            <label for="metodo">
+                                <i class="fas fa-credit-card"></i> Método de Pago *
+                            </label>
+                            <select id="metodo" name="metodo" required>
+                                <option value="">Seleccionar...</option>
                                 <?php foreach (METODOS_PAGO as $key => $value): ?>
-                                    <label class="radio-label">
-                                        <input type="radio" 
-                                               name="metodo" 
-                                               value="<?php echo $key; ?>" 
-                                               required>
-                                        <span><?php echo $value; ?></span>
-                                    </label>
+                                    <option value="<?php echo $key; ?>"><?php echo $value; ?></option>
                                 <?php endforeach; ?>
-                            </div>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="monto">
+                                <i class="fas fa-money-bill"></i> Monto (Gs) *
+                            </label>
+                            <input 
+                                type="number" 
+                                id="monto" 
+                                name="monto" 
+                                step="1" 
+                                min="0" 
+                                required 
+                                placeholder="Ej: 50000">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="descripcion">Descripción *</label>
-                        <textarea id="descripcion" 
-                                  name="descripcion" 
-                                  rows="3" 
-                                  placeholder="Ej: Compra en el supermercado"
-                                  required></textarea>
+                        <label for="fecha">
+                            <i class="fas fa-calendar"></i> Fecha *
+                        </label>
+                        <input 
+                            type="date" 
+                            id="fecha" 
+                            name="fecha" 
+                            value="<?php echo date('Y-m-d'); ?>" 
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descripcion">
+                            <i class="fas fa-file-alt"></i> Descripción *
+                        </label>
+                        <textarea 
+                            id="descripcion" 
+                            name="descripcion" 
+                            rows="3" 
+                            required 
+                            placeholder="Ej: Almuerzo en restaurante"></textarea>
                     </div>
 
                     <div class="form-actions">
-                        <button type="reset" class="btn btn-secondary">Limpiar</button>
-                        <button type="submit" class="btn btn-primary">💾 Guardar Gasto</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Gasto
+                        </button>
+                        <a href="../dashboard/index.php" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
                     </div>
                 </form>
             </div>
 
-            <div class="card tips">
-                <h3>💡 Consejos</h3>
-                <ul>
-                    <li><strong>Gastos Fijos:</strong> Aquellos que se repiten mensualmente (electricidad, internet, etc.)</li>
-                    <li><strong>Gastos Variables:</strong> Compras ocasionales o que varían mes a mes</li>
-                    <li><strong>Gourmet:</strong> Solo para compras en supermercado con la tarjeta</li>
-                    <li><strong>Efectivo:</strong> Para todos los demás gastos</li>
+            <!-- Quick Tips -->
+            <div class="card" style="margin-top: 30px;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-lightbulb"></i> Consejos Rápidos
+                    </h3>
+                </div>
+                <ul style="padding: 20px 40px; margin: 0;">
+                    <li><strong>Necesario:</strong> Gastos esenciales como comida principal, transporte</li>
+                    <li><strong>Opcional:</strong> Gastos no urgentes como entretenimiento, salidas</li>
+                    <li><strong>Emergencia:</strong> Gastos imprevistos que requieren atención inmediata</li>
                 </ul>
             </div>
-        </div>
+        </main>
     </div>
-
-    <script src="../assets/js/main.js"></script>
-    <script>
-        // Validación adicional del formulario
-        document.getElementById('formGasto').addEventListener('submit', function(e) {
-            const monto = parseFloat(document.getElementById('monto').value);
-            
-            if (monto <= 0 || isNaN(monto)) {
-                e.preventDefault();
-                alert('El monto debe ser mayor a 0');
-                return false;
-            }
-        });
-
-        // Mensaje de éxito auto-ocultar
-        <?php if ($tipoMensaje === 'success'): ?>
-        setTimeout(function() {
-            const alert = document.querySelector('.alert-success');
-            if (alert) {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 300);
-            }
-        }, 3000);
-        <?php endif; ?>
-    </script>
 </body>
 </html>
