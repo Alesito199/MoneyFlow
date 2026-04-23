@@ -135,17 +135,17 @@ $iconosPopulares = [
         }
 
         .header-stats {
-            display: flex;
-            gap: 30px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
             margin-top: 25px;
         }
 
         .header-stat {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            padding: 15px 25px;
+            padding: 15px 20px;
             border-radius: 12px;
-            flex: 1;
         }
 
         .header-stat-value {
@@ -587,6 +587,10 @@ $iconosPopulares = [
 
         /* Responsive */
         @media (max-width: 768px) {
+            .main-content {
+                padding: 80px 15px 20px 15px;
+            }
+
             .subscriptions-grid {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 12px;
@@ -594,19 +598,33 @@ $iconosPopulares = [
 
             .page-header-modern {
                 padding: 25px 15px;
+                border-radius: 15px;
             }
 
             .page-header-modern h1 {
-                font-size: 22px;
+                font-size: 24px;
             }
 
             .page-header-modern p {
-                font-size: 14px;
+                font-size: 13px;
             }
 
             .header-stats {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 12px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .header-stat {
+                padding: 12px 15px;
+            }
+
+            .header-stat-value {
+                font-size: 20px;
+            }
+
+            .header-stat-label {
+                font-size: 11px;
             }
 
             .subscription-card-modern {
@@ -649,17 +667,44 @@ $iconosPopulares = [
         }
 
         @media (max-width: 480px) {
+            .main-content {
+                padding: 70px 10px 15px 10px;
+            }
+
             .subscriptions-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
             }
 
-            .header-stats {
-                grid-template-columns: 1fr !important;
+            .page-header-modern {
+                padding: 20px 12px;
+                border-radius: 12px;
             }
 
             .page-header-modern h1 {
                 font-size: 20px;
+            }
+
+            .page-header-modern p {
+                font-size: 12px;
+            }
+
+            .header-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-top: 15px;
+            }
+
+            .header-stat {
+                padding: 10px 12px;
+            }
+
+            .header-stat-value {
+                font-size: 18px;
+            }
+
+            .header-stat-label {
+                font-size: 10px;
             }
 
             .subscription-card-modern {
