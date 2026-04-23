@@ -108,11 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </button>
             </form>
             
-            <div class="login-footer">
+            <!-- <div class="login-footer">
                 <small>Usuarios disponibles:</small><br>
                 <small><strong>admin</strong> / admin123</small><br>
                 <small><strong>maria</strong> / maria123</small>
-            </div>
+            </div> -->
         </div>
     </div>
 </body>
