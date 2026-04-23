@@ -471,7 +471,7 @@ $iconosPopulares = [
                         <div style="font-size: 18px; color: #10b981; font-weight: 600;" id="preview_amount"></div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" style="background: #4b5563 !important;">
                         <i class="fas fa-plus"></i> Agregar Suscripción
                     </button>
                 </form>

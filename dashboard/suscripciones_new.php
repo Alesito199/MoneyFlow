@@ -840,7 +840,7 @@ $iconosPopulares = [
                     <i class="fas fa-inbox" style="font-size: 64px; color: #d1d5db; margin-bottom: 20px;"></i>
                     <h3 style="color: #4b5563; margin-bottom: 10px;">No tienes suscripciones</h3>
                     <p style="color: #9ca3af; margin-bottom: 30px;">Agrega tu primera suscripción para empezar</p>
-                    <button onclick="mostrarModalAgregar()" class="btn-primary-modern btn-modern">
+                    <button onclick="mostrarModalAgregar()" class="btn btn-primary btn-modern">
                         <i class="fas fa-plus"></i> Agregar Suscripción
                     </button>
                 </div>
@@ -1014,7 +1014,7 @@ $iconosPopulares = [
                     <button type="button" onclick="cerrarModal()" class="btn-secondary-modern btn-modern">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-                    <button type="submit" class="btn-primary-modern btn-modern">
+                    <button type="submit" class="btn btn-primary btn-modern">
                         <i class="fas fa-save"></i> Guardar
                     </button>
                 </div>
@@ -1063,7 +1063,7 @@ $iconosPopulares = [
 
                 <form method="POST" style="margin-top: 20px;">
                     <input type="hidden" name="accion" value="actualizar_tasas_api">
-                    <button type="submit" class="btn-primary-modern btn-modern" style="width: 100%;">
+                    <button type="submit" class="btn btn-primary btn-modern" style="width: 100%;">
                         <i class="fas fa-sync-alt"></i> Actualizar Tasas desde API
                     </button>
                 </form>
