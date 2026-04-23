@@ -18,7 +18,7 @@
 
 ## 🎯 ¿Qué es MoneyFlow?
 
-MoneyFlow es una aplicación web diseñada para ayudarte a **controlar tus gastos diarios** con precisión. Te dice **cuánto puedes gastar por día** según tu ingreso, ahorro y gastos fijos, con reinicio automático cada 25 de mes.
+MoneyFlow es una aplicación web diseñada para ayudarte a **controlar tus gastos diarios** con precisión. Te dice **cuánto puedes gastar por día** según tu ingreso, ahorro y gastos fijos, con reinicio automático.
 
 ### ✨ Características Destacadas
 
