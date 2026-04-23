@@ -35,12 +35,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Barra superior móvil (hamburguesa + título) -->
+    <div class="mobile-header">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-header-title">
+            <i class="fas fa-wallet"></i>
+            <span>MoneyFlow</span>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar menú en móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-wallet"></i>
                 <h2>MoneyFlow</h2>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar menú">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <div class="sidebar-menu">
@@ -212,5 +229,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </main>
     </div>
+
+    <!-- Script para Men\u00fa Responsive -->
+    <script>
+        // Elementos del men\u00fa
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+        // Funci\u00f3n para abrir men\u00fa
+        function openSidebar() {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Funci\u00f3n para cerrar men\u00fa
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Event listeners
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarCloseBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Cerrar men\u00fa al hacer clic en un enlace (solo en m\u00f3vil)
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Cerrar men\u00fa al cambiar tama\u00f1o de ventana
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                closeSidebar();
+            }
+        });
+    </script>
 </body>
 </html>

@@ -121,6 +121,12 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    position: relative;
+}
+
+/* Bot\u00f3n cerrar - oculto en desktop */
+.sidebar-close-btn {
+    display: none;
 }
 
 .sidebar-header i {
@@ -588,28 +594,199 @@ body {
 }
 
 /* Responsive */
+
+/* Barra superior en móvil (hamburguesa + título) */
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    padding: 0 15px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-header .hamburger-btn {
+    position: static;
+    margin: 0;
+    background: transparent;
+    color: var(--primary);
+    box-shadow: none;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.mobile-header .hamburger-btn i {
+    font-size: 22px;
+}
+
+.mobile-header .hamburger-btn:hover {
+    background: var(--light);
+    transform: none;
+}
+
+.mobile-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.mobile-header-title i {
+    font-size: 24px;
+    color: var(--primary);
+}
+
+/* Overlay para cerrar men\u00fa en m\u00f3vil */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
 @media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+    /* Mostrar barra superior móvil */
+    .mobile-header {
+        display: flex;
     }
     
+    /* Sidebar oculto por defecto en m\u00f3vil */
+    .sidebar {
+        width: 280px;
+        position: fixed;
+        left: -280px;
+        height: 100vh;
+        z-index: 100;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Sidebar visible cuando tiene clase active */
+    .sidebar.active {
+        left: 0;
+    }
+    
+    /* Bot\u00f3n cerrar en sidebar m\u00f3vil */
+    .sidebar-close-btn {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: transparent;
+        border: none;
+        color: var(--text-light);
+        font-size: 24px;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        transition: all 0.2s;
+    }
+    
+    .sidebar-close-btn:hover {
+        color: var(--primary);
+        transform: rotate(90deg);
+    }
+    
+    /* Ajustar contenido principal */
     .main-content {
         margin-left: 0;
-        padding: 20px;
+        padding: 80px 20px 20px 20px;
+        width: 100%;
     }
     
     .app-container {
         flex-direction: column;
     }
     
+    /* KPIs en columna en m\u00f3vil */
     .kpi-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
     
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    /* Header del dashboard m\u00e1s compacto */
+    .page-header h1 {
+        font-size: 22px;
+    }
+    
+    /* Cards m\u00e1s compactos */
+    .card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* Tablas responsive */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    table {
+        font-size: 14px;
+    }
+    
+    /* Botones en m\u00f3vil */
+    .btn-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    .mobile-header {
+        padding: 0 10px;
+        height: 55px;
+    }
+    
+    .mobile-header-title {
+        font-size: 16px;
+    }
+    
+    .mobile-header-title i {
+        font-size: 20px;
+    }
+    
+    .mobile-header .hamburger-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .mobile-header .hamburger-btn i {
+        font-size: 18px;
     }
 }
 

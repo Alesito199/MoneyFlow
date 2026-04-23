@@ -588,28 +588,115 @@ $iconosPopulares = [
         /* Responsive */
         @media (max-width: 768px) {
             .subscriptions-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 15px;
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
             }
 
             .page-header-modern {
-                padding: 30px 20px;
+                padding: 25px 15px;
+            }
+
+            .page-header-modern h1 {
+                font-size: 22px;
+            }
+
+            .page-header-modern p {
+                font-size: 14px;
             }
 
             .header-stats {
-                flex-direction: column;
-                gap: 15px;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px;
+            }
+
+            .subscription-card-modern {
+                padding: 20px;
+            }
+
+            .subscription-icon-modern {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+
+            .subscription-name-modern {
+                font-size: 15px;
+            }
+
+            .fab-button {
+                width: 55px;
+                height: 55px;
+                bottom: 20px;
+                right: 20px;
+                font-size: 22px;
+            }
+
+            .modal-content-modern {
+                max-width: 95%;
+                margin: 10px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .color-picker, .icon-picker {
+                gap: 8px;
+            }
+
+            .color-option, .icon-option {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .subscriptions-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .header-stats {
+                grid-template-columns: 1fr !important;
+            }
+
+            .page-header-modern h1 {
+                font-size: 20px;
+            }
+
+            .subscription-card-modern {
+                padding: 15px;
+            }
+
+            .btn-modern {
+                padding: 10px 16px;
+                font-size: 13px;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Barra superior móvil (hamburguesa + título) -->
+    <div class="mobile-header">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-header-title">
+            <i class="fas fa-wallet"></i>
+            <span>MoneyFlow</span>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar menú en móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-wallet"></i>
                 <h2>MoneyFlow</h2>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar men\u00fa">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <div class="sidebar-menu">
@@ -1032,6 +1119,51 @@ $iconosPopulares = [
         document.getElementById('modalForm').addEventListener('click', function(e) {
             if (e.target === this) {
                 cerrarModal();
+            }
+        });
+    </script>
+
+    <!-- Script para Men\u00fa Responsive -->
+    <script>
+        // Elementos del men\u00fa
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+        // Funci\u00f3n para abrir men\u00fa
+        function openSidebar() {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Evitar scroll del body
+        }
+
+        // Funci\u00f3n para cerrar men\u00fa
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = ''; // Restaurar scroll
+        }
+
+        // Event listeners
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarCloseBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Cerrar men\u00fa al hacer clic en un enlace (solo en m\u00f3vil)
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Cerrar men\u00fa al cambiar tama\u00f1o de ventana (si pasa a desktop)
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                closeSidebar();
             }
         });
     </script>

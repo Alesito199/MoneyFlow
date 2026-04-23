@@ -79,12 +79,29 @@ $historialAhorro = obtenerHistorialAhorro(null, 5); // Últimos 5 periodos
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Barra superior móvil (hamburguesa + título) -->
+    <div class="mobile-header">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-header-title">
+            <i class="fas fa-wallet"></i>
+            <span>MoneyFlow</span>
+        </div>
+    </div>
+
+    <!-- Overlay para cerrar menú en móvil -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <i class="fas fa-wallet"></i>
                 <h2>MoneyFlow</h2>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Cerrar menú">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             
             <div class="sidebar-menu">
@@ -472,6 +489,51 @@ $historialAhorro = obtenerHistorialAhorro(null, 5); // Últimos 5 periodos
                 console.log(`Periodo de ${diffDays} días`);
             }
         }
+    </script>
+
+    <!-- Script para Menú Responsive -->
+    <script>
+        // Elementos del menú
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+        // Función para abrir menú
+        function openSidebar() {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Función para cerrar menú
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Event listeners
+        hamburgerBtn.addEventListener('click', openSidebar);
+        sidebarCloseBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Cerrar menú al hacer clic en un enlace (solo en móvil)
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Cerrar menú al cambiar tamaño de ventana
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                closeSidebar();
+            }
+        });
     </script>
 </body>
 </html>
