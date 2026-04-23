@@ -4,6 +4,7 @@
 -- ======================================
 
 -- Eliminar tablas si existen (para re-ejecución limpia)
+DROP TABLE IF EXISTS ahorro_historico;
 DROP TABLE IF EXISTS suscripciones;
 DROP TABLE IF EXISTS gastos;
 DROP TABLE IF EXISTS gastos_fijos;
@@ -124,6 +125,25 @@ CREATE TABLE tasas_cambio (
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_conversion (moneda_origen, moneda_destino),
     INDEX idx_moneda (moneda_origen)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================================
+-- TABLA: ahorro_historico
+-- Almacena el historial de ahorros acumulados por periodo
+-- ======================================
+CREATE TABLE ahorro_historico (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    periodo_inicio DATE NOT NULL,
+    periodo_fin DATE NOT NULL,
+    ingreso_real DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT 'Ingreso real del periodo',
+    gastos_totales DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT 'Total de gastos (fijos + suscripciones + variables)',
+    monto_ahorrado DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT 'Ingreso - Gastos = Ahorro real',
+    notas TEXT DEFAULT NULL COMMENT 'Observaciones del periodo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    INDEX idx_user_periodo (user_id, periodo_inicio),
+    INDEX idx_user_fecha (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================================

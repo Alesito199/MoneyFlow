@@ -46,6 +46,10 @@ $esAdmin = isAdmin();
 // Obtener suscripciones
 $suscripciones = obtenerSuscripciones();
 $totalSuscripciones = calcularTotalSuscripciones();
+
+// Obtener ahorro acumulado histórico
+$ahorroAcumulado = obtenerAhorroAcumulado();
+$ahorroActual = calcularAhorroPeriodoActual();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -170,8 +174,19 @@ $totalSuscripciones = calcularTotalSuscripciones();
                     </div>
                     <div class="kpi-content">
                         <h3>Gastos Fijos</h3>
-                        <div class="kpi-value"><?php echo formatearMoneda($estado['gastos_fijos']); ?></div>
-                        <div class="kpi-label">Total mensual</div>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['gastos_fijos_tradicionales']); ?></div>
+                        <div class="kpi-label">Gastos mensuales fijos</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: #6b7280;">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Suscripciones</h3>
+                        <div class="kpi-value"><?php echo formatearMoneda($estado['gastos_suscripciones']); ?></div>
+                        <div class="kpi-label">Total mensual suscripciones</div>
                     </div>
                 </div>
 
@@ -207,6 +222,19 @@ $totalSuscripciones = calcularTotalSuscripciones();
                             <?php echo formatearMoneda($estado['disponible_real']); ?>
                         </div>
                         <div class="kpi-label">Después de gastos</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Ahorro Acumulado</h3>
+                        <div class="kpi-value" style="color: #10b981;">
+                            <?php echo formatearMoneda($ahorroAcumulado); ?>
+                        </div>
+                        <div class="kpi-label">Total histórico ahorrado</div>
                     </div>
                 </div>
             </div>

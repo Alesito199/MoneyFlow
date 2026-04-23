@@ -14,19 +14,45 @@ if (isset($_GET['autoconfigurar']) && $_GET['autoconfigurar'] === '1') {
 
 // Procesar formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $ingresoMensual = floatval($_POST['ingreso_mensual'] ?? 0);
-    $montoAhorro = floatval($_POST['monto_ahorro'] ?? 0);
-    $montoGourmet = floatval($_POST['monto_gourmet'] ?? 0);
-    $fechaInicio = $_POST['fecha_inicio'];
-    $fechaFin = $_POST['fecha_fin'];
-    
-    if (actualizarConfiguracion($ingresoMensual, $montoAhorro, $montoGourmet, $fechaInicio, $fechaFin)) {
-        $mensaje = 'Configuración actualizada exitosamente';
-        $tipo_mensaje = 'success';
-        $config = obtenerConfiguracion(); // Recargar configuración
-    } else {
-        $mensaje = 'Error al actualizar la configuración';
-        $tipo_mensaje = 'error';
+    // Cerrar periodo y registrar ahorro
+    if (isset($_POST['accion']) && $_POST['accion'] === 'cerrar_periodo') {
+        $userId = getUserId();
+        $ahorroActual = calcularAhorroPeriodoActual($userId);
+        $notas = $_POST['notas'] ?? null;
+        
+        if (registrarAhorroPeriodo(
+            $userId,
+            $ahorroActual['periodo_inicio'],
+            $ahorroActual['periodo_fin'],
+            $ahorroActual['ingreso'],
+            $ahorroActual['gastos_totales'],
+            $notas
+        )) {
+            $ahorroAcumulado = obtenerAhorroAcumulado($userId);
+            $montoAhorrado = $ahorroActual['ahorro_proyectado'];
+            $mensaje = "¡Periodo cerrado exitosamente! Se registraron " . formatearMoneda($montoAhorrado) . " en tu ahorro. Total acumulado: " . formatearMoneda($ahorroAcumulado);
+            $tipo_mensaje = 'success';
+        } else {
+            $mensaje = 'Error al registrar el ahorro del periodo';
+            $tipo_mensaje = 'error';
+        }
+    }
+    // Actualizar configuración normal
+    else {
+        $ingresoMensual = floatval($_POST['ingreso_mensual'] ?? 0);
+        $montoAhorro = floatval($_POST['monto_ahorro'] ?? 0);
+        $montoGourmet = floatval($_POST['monto_gourmet'] ?? 0);
+        $fechaInicio = $_POST['fecha_inicio'];
+        $fechaFin = $_POST['fecha_fin'];
+        
+        if (actualizarConfiguracion($ingresoMensual, $montoAhorro, $montoGourmet, $fechaInicio, $fechaFin)) {
+            $mensaje = 'Configuración actualizada exitosamente';
+            $tipo_mensaje = 'success';
+            $config = obtenerConfiguracion(); // Recargar configuración
+        } else {
+            $mensaje = 'Error al actualizar la configuración';
+            $tipo_mensaje = 'error';
+        }
     }
 }
 
@@ -37,6 +63,11 @@ if (!isset($config)) {
 
 // Obtener verificación de reinicio
 $verificarReinicio = verificarReinicioPeriodo();
+
+// Obtener información de ahorro
+$ahorroAcumulado = obtenerAhorroAcumulado();
+$ahorroActual = calcularAhorroPeriodoActual();
+$historialAhorro = obtenerHistorialAhorro(null, 5); // Últimos 5 periodos
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -292,6 +323,127 @@ $verificarReinicio = verificarReinicioPeriodo();
                     <strong>📅 Recomendación:</strong><br>
                     Para un control mensual efectivo, configura tu periodo del <strong>25 de cada mes al 24 del siguiente mes</strong>.
                     El sistema te alertará cada día 25 para que inicies un nuevo periodo.
+                </div>
+            </div>
+
+            <!-- Cerrar Periodo y Registrar Ahorro -->
+            <div class="card" style="border-left: 4px solid #10b981;">
+                <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                    <h3 class="card-title">
+                        <i class="fas fa-piggy-bank"></i> Cerrar Periodo y Registrar Ahorro
+                    </h3>
+                </div>
+
+                <div style="padding: 30px;">
+                    <!-- Resumen del Periodo Actual -->
+                    <div style="background: #f0fdf4; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                        <h4 style="color: #059669; margin-bottom: 15px;">
+                            <i class="fas fa-calendar-check"></i> Periodo Actual
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <strong>Fechas:</strong><br>
+                                <span style="font-size: 14px;">
+                                    <?php echo date('d/m/Y', strtotime($ahorroActual['periodo_inicio'])); ?> - 
+                                    <?php echo date('d/m/Y', strtotime($ahorroActual['periodo_fin'])); ?>
+                                </span>
+                            </div>
+                            <div>
+                                <strong>Ingreso:</strong><br>
+                                <span style="font-size: 18px; color: #10b981;">
+                                    <?php echo formatearMoneda($ahorroActual['ingreso']); ?>
+                                </span>
+                            </div>
+                            <div>
+                                <strong>Gastos Totales:</strong><br>
+                                <span style="font-size: 18px; color: #ef4444;">
+                                    <?php echo formatearMoneda($ahorroActual['gastos_totales']); ?>
+                                </span>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 8px; border: 2px solid #10b981;">
+                                <strong>Ahorro del Periodo:</strong><br>
+                                <span style="font-size: 22px; font-weight: bold; color: #059669;">
+                                    <?php echo formatearMoneda($ahorroActual['ahorro_proyectado']); ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
+                            <strong style="font-size: 16px; color: #059669;">
+                                💰 Ahorro Acumulado Total: <?php echo formatearMoneda($ahorroAcumulado); ?>
+                            </strong>
+                        </div>
+                    </div>
+
+                    <!-- Formulario para Cerrar Periodo -->
+                    <form method="POST" style="margin-bottom: 25px;">
+                        <input type="hidden" name="accion" value="cerrar_periodo">
+                        <div class="form-group">
+                            <label for="notas">
+                                <i class="fas fa-sticky-note"></i> Notas del Periodo (Opcional)
+                            </label>
+                            <textarea 
+                                id="notas" 
+                                name="notas" 
+                                class="form-control" 
+                                rows="3" 
+                                placeholder="Ej: Mes con gastos extra por reparaciones, vacaciones, etc."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; width: 100%;">
+                            <i class="fas fa-check-circle"></i> Cerrar Periodo y Guardar Ahorro
+                        </button>
+                    </form>
+
+                    <!-- Historial de Ahorros -->
+                    <?php if (!empty($historialAhorro)): ?>
+                        <div style="margin-top: 30px;">
+                            <h4 style="color: #374151; margin-bottom: 15px;">
+                                <i class="fas fa-history"></i> Historial de Ahorros (Últimos 5 periodos)
+                            </h4>
+                            <table class="table" style="font-size: 14px;">
+                                <thead>
+                                    <tr style="background: #f3f4f6;">
+                                        <th>Periodo</th>
+                                        <th>Ingreso</th>
+                                        <th>Gastos</th>
+                                        <th style="color: #059669;">Ahorrado</th>
+                                        <th>Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($historialAhorro as $registro): ?>
+                                        <tr>
+                                            <td>
+                                                <small>
+                                                    <?php echo date('d/m/Y', strtotime($registro['periodo_inicio'])); ?><br>
+                                                    <?php echo date('d/m/Y', strtotime($registro['periodo_fin'])); ?>
+                                                </small>
+                                            </td>
+                                            <td><?php echo formatearMoneda($registro['ingreso_real']); ?></td>
+                                            <td><?php echo formatearMoneda($registro['gastos_totales']); ?></td>
+                                            <td style="font-weight: bold; color: <?php echo $registro['monto_ahorrado'] >= 0 ? '#059669' : '#ef4444'; ?>">
+                                                <?php echo formatearMoneda($registro['monto_ahorrado']); ?>
+                                            </td>
+                                            <td><small><?php echo htmlspecialchars($registro['notas'] ?? '-'); ?></small></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: bold;">
+                                        <td colspan="3" style="color: white;">TOTAL ACUMULADO</td>
+                                        <td colspan="2" style="color: white; font-size: 18px;">
+                                            <?php echo formatearMoneda($ahorroAcumulado); ?>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <div style="padding: 20px; background: #fef3c7; border-radius: 8px; text-align: center;">
+                            <i class="fas fa-info-circle" style="color: #f59e0b; font-size: 24px; margin-bottom: 10px;"></i><br>
+                            <strong>No hay historial de ahorros registrado aún.</strong><br>
+                            <small>Cierra tu primer periodo para comenzar a acumular tu historial de ahorros.</small>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </main>

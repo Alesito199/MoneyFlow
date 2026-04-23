@@ -130,6 +130,8 @@ function calcularEstadoFinanciero($userId = null) {
     $gastosEfectivo = calcularGastosEfectivo($config['fecha_inicio'], $config['fecha_fin'], $userId);
     $gastosGourmet = calcularGastosGourmet($config['fecha_inicio'], $config['fecha_fin'], $userId);
     $totalGastosFijos = calcularTotalGastosFijos($userId);
+    $gastosFijosTradicionales = calcularTotalGastosFijosTradicionales($userId);
+    $totalSuscripciones = calcularTotalSuscripciones($userId);
     
     // Cálculos según los requisitos
     $ingresoMensual = floatval($config['ingreso_mensual']);
@@ -159,6 +161,8 @@ function calcularEstadoFinanciero($userId = null) {
         'monto_ahorro' => $montoAhorro,
         'monto_gourmet' => floatval($config['monto_gourmet']),
         'gastos_fijos' => $totalGastosFijos,
+        'gastos_fijos_tradicionales' => $gastosFijosTradicionales,
+        'gastos_suscripciones' => $totalSuscripciones,
         'gastos_variables' => $gastosVariables,
         'disponible' => $disponible,
         'disponible_real' => $disponibleReal,
@@ -520,6 +524,30 @@ function calcularTotalGastosFijos($userId = null) {
         
         // Retornar la suma de ambos
         return $gastosFijos + $suscripciones;
+    } catch (PDOException $e) {
+        return 0;
+    }
+}
+
+/**
+ * Calcular total de gastos fijos tradicionales (sin suscripciones)
+ * @param int $userId
+ * @return float
+ */
+function calcularTotalGastosFijosTradicionales($userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(monto), 0) as total 
+            FROM gastos_fijos 
+            WHERE user_id = ? AND activo = 1
+        ");
+        $stmt->execute([$userId]);
+        return floatval($stmt->fetch(PDO::FETCH_ASSOC)['total']);
     } catch (PDOException $e) {
         return 0;
     }
@@ -1058,6 +1086,145 @@ function calcularTotalSuscripciones($userId = null) {
     } catch (PDOException $e) {
         return 0;
     }
+}
+
+// ==========================================
+// FUNCIONES DE AHORRO ACUMULADO
+// ==========================================
+
+/**
+ * Registrar ahorro del periodo cerrado
+ * @param int $userId
+ * @param string $periodoInicio
+ * @param string $periodoFin
+ * @param float $ingresoReal
+ * @param float $gastosTotales
+ * @param string $notas
+ * @return bool
+ */
+function registrarAhorroPeriodo($userId, $periodoInicio, $periodoFin, $ingresoReal, $gastosTotales, $notas = null) {
+    try {
+        $pdo = getDBConnection();
+        $montoAhorrado = $ingresoReal - $gastosTotales;
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO ahorro_historico (user_id, periodo_inicio, periodo_fin, ingreso_real, gastos_totales, monto_ahorrado, notas)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        return $stmt->execute([
+            $userId,
+            $periodoInicio,
+            $periodoFin,
+            $ingresoReal,
+            $gastosTotales,
+            $montoAhorrado,
+            $notas
+        ]);
+    } catch (PDOException $e) {
+        error_log("Error al registrar ahorro: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Obtener ahorro acumulado total del usuario
+ * @param int $userId
+ * @return float
+ */
+function obtenerAhorroAcumulado($userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(monto_ahorrado), 0) as total_ahorrado
+            FROM ahorro_historico
+            WHERE user_id = ?
+        ");
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return floatval($result['total_ahorrado']);
+    } catch (PDOException $e) {
+        error_log("Error al obtener ahorro acumulado: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Obtener historial de ahorros por periodo
+ * @param int $userId
+ * @param int $limit
+ * @return array
+ */
+function obtenerHistorialAhorro($userId = null, $limit = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $sql = "
+            SELECT 
+                id,
+                periodo_inicio,
+                periodo_fin,
+                ingreso_real,
+                gastos_totales,
+                monto_ahorrado,
+                notas,
+                created_at
+            FROM ahorro_historico
+            WHERE user_id = ?
+            ORDER BY periodo_inicio DESC
+        ";
+        
+        if ($limit !== null) {
+            $sql .= " LIMIT " . intval($limit);
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Error al obtener historial de ahorro: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Calcular ahorro del periodo actual (sin guardar)
+ * @param int $userId
+ * @return array ['ingreso', 'gastos_totales', 'ahorro_proyectado']
+ */
+function calcularAhorroPeriodoActual($userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    $estado = calcularEstadoFinanciero($userId);
+    
+    if (!$estado) {
+        return [
+            'ingreso' => 0,
+            'gastos_totales' => 0,
+            'ahorro_proyectado' => 0
+        ];
+    }
+    
+    // Total de gastos = gastos_fijos + gastos_variables
+    $gastosTotales = $estado['gastos_fijos'] + $estado['gastos_variables'];
+    $ahorroProyectado = $estado['ingreso_mensual'] - $gastosTotales;
+    
+    return [
+        'ingreso' => $estado['ingreso_mensual'],
+        'gastos_totales' => $gastosTotales,
+        'ahorro_proyectado' => $ahorroProyectado,
+        'periodo_inicio' => $estado['fecha_inicio'],
+        'periodo_fin' => $estado['fecha_fin']
+    ];
 }
 
 /**
