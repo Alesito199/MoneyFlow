@@ -42,6 +42,10 @@ $verificarReinicio = verificarReinicioPeriodo();
 
 // Verificar si el usuario es admin
 $esAdmin = isAdmin();
+
+// Obtener suscripciones
+$suscripciones = obtenerSuscripciones();
+$totalSuscripciones = calcularTotalSuscripciones();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -77,6 +81,10 @@ $esAdmin = isAdmin();
                 <a href="gastos_fijos.php" class="menu-item">
                     <i class="fas fa-receipt"></i>
                     <span>Gastos Fijos</span>
+                </a>
+                <a href="suscripciones_new.php" class="menu-item">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Suscripciones</span>
                 </a>
                 <a href="configuracion.php" class="menu-item">
                     <i class="fas fa-cog"></i>
@@ -325,6 +333,73 @@ $esAdmin = isAdmin();
                     </div>
                 </div>
             </div>
+
+            <!-- Mis Suscripciones -->
+            <?php if (!empty($suscripciones)): ?>
+            <div class="card" style="background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb;">
+                    <h3 class="card-title" style="font-size: 20px; font-weight: 700;">
+                        <i class="fas fa-sync-alt" style="color: #4b5563;"></i> Mis Suscripciones Activas
+                    </h3>
+                    <a href="suscripciones_new.php" class="btn btn-sm btn-primary" style="background: linear-gradient(135deg, #4b5563 0%, #374151 100%); border: none; padding: 8px 16px; border-radius: 8px;">
+                        <i class="fas fa-cog"></i> Administrar
+                    </a>
+                </div>
+                
+                <div style="padding: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; margin-bottom: 25px;">
+                        <?php foreach ($suscripciones as $sub): ?>
+                            <div style="background: white; border-radius: 16px; padding: 20px; text-align: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); border: 2px solid transparent;" 
+                                 onmouseover="this.style.borderColor='<?php echo htmlspecialchars($sub['color']); ?>'; this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.12)';"
+                                 onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';"
+                                 onclick="window.location.href='suscripciones_new.php'">
+                                <div style="width: 60px; height: 60px; margin: 0 auto 12px; background: <?php echo htmlspecialchars($sub['color']); ?>; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 28px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                                    <i class="fas <?php echo htmlspecialchars($sub['icono']); ?>"></i>
+                                </div>
+                                <div style="font-weight: 600; font-size: 15px; margin-bottom: 6px; color: #1f2937; line-height: 1.3;">
+                                    <?php echo htmlspecialchars($sub['nombre']); ?>
+                                </div>
+                                <div style="display: inline-block; padding: 3px 8px; background: <?php echo $sub['moneda'] === 'USD' ? '#d1fae5' : ($sub['moneda'] === 'EUR' ? '#dbeafe' : '#f3f4f6'); ?>; color: <?php echo $sub['moneda'] === 'USD' ? '#065f46' : ($sub['moneda'] === 'EUR' ? '#1e40af' : '#4b5563'); ?>; border-radius: 6px; font-size: 10px; font-weight: 700; margin-bottom: 6px;">
+                                    <?php echo $sub['moneda']; ?>
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                                    <?php if ($sub['moneda'] !== 'PYG'): ?>
+                                        <span style="display: block; font-size: 11px; color: #9ca3af;">
+                                            <?php echo $sub['moneda']; ?> <?php echo number_format($sub['monto'], 2); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <span style="font-weight: 700; color: #1f2937; font-size: 16px;">
+                                        ₲<?php echo number_format($sub['monto_pyg'], 0); ?>
+                                    </span>
+                                </div>
+                                <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">
+                                    <i class="fas fa-calendar-alt"></i> Día <?php echo $sub['dia_cobro']; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div style="padding: 20px; background: linear-gradient(135deg, #4b5563 0%, #374151 100%); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 4px 12px rgba(75, 85, 99, 0.25);">
+                        <div>
+                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">
+                                <i class="fas fa-calculator"></i> Total mensual en suscripciones
+                            </div>
+                            <div style="font-size: 28px; font-weight: 700;">
+                                <?php echo formatearMoneda($totalSuscripciones); ?>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">
+                                <?php echo count($suscripciones); ?> suscripciones activas
+                            </div>
+                            <a href="suscripciones_new.php" style="font-size: 13px; color: white; text-decoration: underline; opacity: 0.9; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.9'">
+                                Ver todas →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Gráfico de Gastos por Categoría -->
             <div class="card">

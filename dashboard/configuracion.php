@@ -73,6 +73,10 @@ $verificarReinicio = verificarReinicioPeriodo();
                     <i class="fas fa-receipt"></i>
                     <span>Gastos Fijos</span>
                 </a>
+                <a href="suscripciones_new.php" class="menu-item">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Suscripciones</span>
+                </a>
                 <a href="configuracion.php" class="menu-item active">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>

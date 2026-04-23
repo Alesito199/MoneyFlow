@@ -499,14 +499,27 @@ function calcularTotalGastosFijos($userId = null) {
     
     try {
         $pdo = getDBConnection();
+        
+        // Sumar gastos fijos tradicionales
         $stmt = $pdo->prepare("
             SELECT COALESCE(SUM(monto), 0) as total 
             FROM gastos_fijos 
             WHERE user_id = ? AND activo = 1
         ");
         $stmt->execute([$userId]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return floatval($result['total']);
+        $gastosFijos = floatval($stmt->fetch(PDO::FETCH_ASSOC)['total']);
+        
+        // Sumar suscripciones activas (en guaraníes)
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(monto_pyg), 0) as total 
+            FROM suscripciones 
+            WHERE user_id = ? AND activo = 1
+        ");
+        $stmt->execute([$userId]);
+        $suscripciones = floatval($stmt->fetch(PDO::FETCH_ASSOC)['total']);
+        
+        // Retornar la suma de ambos
+        return $gastosFijos + $suscripciones;
     } catch (PDOException $e) {
         return 0;
     }
@@ -734,5 +747,402 @@ function actualizarConfiguracion($ingresoMensual, $montoAhorro, $montoGourmet, $
     } catch (PDOException $e) {
         return false;
     }
+}
+
+// ===============================================
+// FUNCIONES DE SUSCRIPCIONES
+// ===============================================
+
+/**
+ * Obtener tasas de cambio desde API gratuita
+ * Usa ExchangeRate-API (1500 requests/mes gratis)
+ * @return array
+ */
+function obtenerTasasDesdeAPI() {
+    try {
+        // Verificar si cURL está habilitado
+        if (!function_exists('curl_init')) {
+            $_SESSION['error_message'] = "cURL no está habilitado en el servidor PHP";
+            return false;
+        }
+        
+        // API gratuita de tasas de cambio
+        $url = "https://open.er-api.com/v6/latest/USD";
+        
+        // Usar cURL para obtener datos
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Para evitar problemas SSL
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($response === false) {
+            $_SESSION['error_message'] = "Error de conexión con API: " . $error;
+            return false;
+        }
+        
+        if ($httpCode !== 200) {
+            $_SESSION['error_message'] = "API retornó código HTTP: " . $httpCode;
+            return false;
+        }
+        
+        $data = json_decode($response, true);
+        
+        if (!isset($data['rates'])) {
+            $_SESSION['error_message'] = "Respuesta de API inválida - no contiene tasas";
+            return false;
+        }
+        
+        // Verificar que existan las monedas necesarias
+        if (!isset($data['rates']['PYG']) || !isset($data['rates']['EUR'])) {
+            $_SESSION['error_message'] = "API no contiene tasas para PYG o EUR";
+            return false;
+        }
+        
+        // Calcular tasa USD a PYG y EUR a PYG
+        $usdToPyg = $data['rates']['PYG'];
+        
+        // Para EUR, necesitamos calcular: EUR -> USD -> PYG
+        $eurToUsd = 1 / $data['rates']['EUR'];
+        $eurToPyg = $eurToUsd * $usdToPyg;
+        
+        return [
+            'USD_PYG' => round($usdToPyg, 2),
+            'EUR_PYG' => round($eurToPyg, 2),
+            'PYG_PYG' => 1.00,
+            'fecha_actualizacion' => date('Y-m-d H:i:s')
+        ];
+        
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = "Excepción al obtener tasas: " . $e->getMessage();
+        error_log("Error obteniendo tasas de API: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Actualizar tasas de cambio desde API
+ * @return bool
+ */
+function actualizarTasasDesdeAPI() {
+    $tasas = obtenerTasasDesdeAPI();
+    
+    if ($tasas === false) {
+        // El mensaje de error ya está en $_SESSION['error_message']
+        return false;
+    }
+    
+    // Actualizar cada tasa en la base de datos
+    $resultado = true;
+    $errores = [];
+    
+    if (isset($tasas['USD_PYG'])) {
+        if (!actualizarTasaCambio('USD', 'PYG', $tasas['USD_PYG'])) {
+            $resultado = false;
+            $errores[] = "No se pudo actualizar USD->PYG";
+        }
+    }
+    
+    if (isset($tasas['EUR_PYG'])) {
+        if (!actualizarTasaCambio('EUR', 'PYG', $tasas['EUR_PYG'])) {
+            $resultado = false;
+            $errores[] = "No se pudo actualizar EUR->PYG";
+        }
+    }
+    
+    if (!$resultado) {
+        $_SESSION['error_message'] = "Error actualizando BD: " . implode(", ", $errores);
+    } else {
+        $_SESSION['success_message'] = "Tasas actualizadas: USD = ₲" . number_format($tasas['USD_PYG'], 0) . ", EUR = ₲" . number_format($tasas['EUR_PYG'], 0);
+    }
+    
+    return $resultado;
+}
+
+/**
+ * Obtener todas las suscripciones de un usuario
+ * @param int $userId
+ * @param bool $soloActivas
+ * @return array
+ */
+function obtenerSuscripciones($userId = null, $soloActivas = true) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $sql = "SELECT * FROM suscripciones WHERE user_id = ?";
+        
+        if ($soloActivas) {
+            $sql .= " AND activo = 1";
+        }
+        
+        $sql .= " ORDER BY nombre ASC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Obtener una suscripción por ID
+ * @param int $id
+ * @return array|false
+ */
+function obtenerSuscripcionPorId($id) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT * FROM suscripciones 
+            WHERE id = ? AND user_id = ?
+        ");
+        $stmt->execute([$id, getUserId()]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Agregar nueva suscripción
+ * @param string $nombre
+ * @param float $monto
+ * @param string $moneda
+ * @param string $icono
+ * @param string $color
+ * @param int $diaCobro
+ * @param string $descripcion
+ * @param int $userId
+ * @return bool
+ */
+function agregarSuscripcion($nombre, $monto, $moneda, $icono, $color, $diaCobro, $descripcion = null, $userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    if (empty($nombre) || $monto <= 0 || empty($moneda) || empty($icono)) {
+        return false;
+    }
+    
+    // Actualizar tasas desde API si la moneda no es PYG
+    if ($moneda !== 'PYG') {
+        actualizarTasasDesdeAPI();
+    }
+    
+    // Calcular monto en PYG con tasas actualizadas
+    $montoPYG = calcularMontoEnPYG($monto, $moneda);
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            INSERT INTO suscripciones 
+            (user_id, nombre, monto, moneda, monto_pyg, icono, color, dia_cobro, descripcion) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        return $stmt->execute([
+            $userId,
+            $nombre,
+            $monto,
+            $moneda,
+            $montoPYG,
+            $icono,
+            $color,
+            $diaCobro,
+            $descripcion
+        ]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Actualizar una suscripción
+ * @param int $id
+ * @param string $nombre
+ * @param float $monto
+ * @param string $moneda
+ * @param string $icono
+ * @param string $color
+ * @param int $diaCobro
+ * @param string $descripcion
+ * @return bool
+ */
+function actualizarSuscripcion($id, $nombre, $monto, $moneda, $icono, $color, $diaCobro, $descripcion = null) {
+    if (empty($nombre) || $monto <= 0 || empty($moneda) || empty($icono)) {
+        return false;
+    }
+    
+    // Actualizar tasas desde API si la moneda no es PYG
+    if ($moneda !== 'PYG') {
+        actualizarTasasDesdeAPI();
+    }
+    
+    // Calcular monto en PYG con tasas actualizadas
+    $montoPYG = calcularMontoEnPYG($monto, $moneda);
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            UPDATE suscripciones 
+            SET nombre = ?, monto = ?, moneda = ?, monto_pyg = ?, icono = ?, color = ?, dia_cobro = ?, descripcion = ?
+            WHERE id = ? AND user_id = ?
+        ");
+        
+        return $stmt->execute([
+            $nombre,
+            $monto,
+            $moneda,
+            $montoPYG,
+            $icono,
+            $color,
+            $diaCobro,
+            $descripcion,
+            $id,
+            getUserId()
+        ]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Eliminar (desactivar) una suscripción
+ * @param int $id
+ * @return bool
+ */
+function eliminarSuscripcion($id) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            UPDATE suscripciones 
+            SET activo = 0 
+            WHERE id = ? AND user_id = ?
+        ");
+        return $stmt->execute([$id, getUserId()]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Calcular el total de suscripciones en PYG
+ * @param int $userId
+ * @return float
+ */
+function calcularTotalSuscripciones($userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(monto_pyg), 0) as total 
+            FROM suscripciones 
+            WHERE user_id = ? AND activo = 1
+        ");
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return floatval($result['total']);
+    } catch (PDOException $e) {
+        return 0;
+    }
+}
+
+/**
+ * Obtener todas las tasas de cambio
+ * @return array
+ */
+function obtenerTasasCambio() {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT * FROM tasas_cambio ORDER BY moneda_origen ASC");
+        $stmt->execute();
+        $tasas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Convertir a array asociativo para fácil acceso
+        $resultado = [];
+        foreach ($tasas as $tasa) {
+            $key = $tasa['moneda_origen'] . '_' . $tasa['moneda_destino'];
+            $resultado[$key] = floatval($tasa['tasa']);
+        }
+        
+        return $resultado;
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Actualizar tasa de cambio
+ * @param string $monedaOrigen
+ * @param string $monedaDestino
+ * @param float $tasa
+ * @return bool
+ */
+function actualizarTasaCambio($monedaOrigen, $monedaDestino, $tasa) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            INSERT INTO tasas_cambio (moneda_origen, moneda_destino, tasa) 
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE tasa = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+        ");
+        $resultado = $stmt->execute([$monedaOrigen, $monedaDestino, $tasa, $tasa]);
+        
+        if (!$resultado) {
+            error_log("Error actualizando tasa $monedaOrigen->$monedaDestino: " . print_r($stmt->errorInfo(), true));
+        }
+        
+        return $resultado;
+    } catch (PDOException $e) {
+        error_log("Excepción actualizando tasa de cambio: " . $e->getMessage());
+        $_SESSION['error_message'] = "Error de base de datos: " . $e->getMessage();
+        return false;
+    }
+}
+
+/**
+ * Convertir monto de una moneda a otra
+ * @param float $monto
+ * @param string $monedaOrigen
+ * @param string $monedaDestino
+ * @return float
+ */
+function convertirMoneda($monto, $monedaOrigen, $monedaDestino = 'PYG') {
+    if ($monedaOrigen === $monedaDestino) {
+        return $monto;
+    }
+    
+    $tasas = obtenerTasasCambio();
+    $key = $monedaOrigen . '_' . $monedaDestino;
+    
+    if (isset($tasas[$key])) {
+        return $monto * $tasas[$key];
+    }
+    
+    // Si no existe la tasa, retornar el monto original
+    return $monto;
+}
+
+/**
+ * Calcular monto en guaraníes (PYG)
+ * @param float $monto
+ * @param string $moneda
+ * @return float
+ */
+function calcularMontoEnPYG($monto, $moneda) {
+    return convertirMoneda($monto, $moneda, 'PYG');
 }
 

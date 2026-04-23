@@ -4,10 +4,12 @@
 -- ======================================
 
 -- Eliminar tablas si existen (para re-ejecución limpia)
+DROP TABLE IF EXISTS suscripciones;
 DROP TABLE IF EXISTS gastos;
 DROP TABLE IF EXISTS gastos_fijos;
 DROP TABLE IF EXISTS configuracion;
 DROP TABLE IF EXISTS usuarios;
+DROP TABLE IF EXISTS tasas_cambio;
 
 -- ======================================
 -- TABLA: usuarios
@@ -88,6 +90,43 @@ CREATE TABLE gastos_fijos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ======================================
+-- TABLA: suscripciones
+-- Almacena suscripciones mensuales con soporte multi-moneda
+-- ======================================
+CREATE TABLE suscripciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    moneda ENUM('PYG', 'USD', 'EUR') NOT NULL DEFAULT 'PYG',
+    monto_pyg DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Monto convertido a guaraníes',
+    icono VARCHAR(50) NOT NULL DEFAULT 'fa-star' COMMENT 'Clase de FontAwesome',
+    color VARCHAR(7) NOT NULL DEFAULT '#4b5563' COMMENT 'Color hexadecimal',
+    dia_cobro INT NOT NULL DEFAULT 1 COMMENT 'Día del mes que se cobra (1-31)',
+    descripcion VARCHAR(255) DEFAULT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    INDEX idx_user_activo (user_id, activo),
+    INDEX idx_moneda (moneda)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================================
+-- TABLA: tasas_cambio
+-- Almacena las tasas de cambio actualizables
+-- ======================================
+CREATE TABLE tasas_cambio (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    moneda_origen VARCHAR(3) NOT NULL,
+    moneda_destino VARCHAR(3) NOT NULL DEFAULT 'PYG',
+    tasa DECIMAL(10,2) NOT NULL,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_conversion (moneda_origen, moneda_destino),
+    INDEX idx_moneda (moneda_origen)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ======================================
 -- DATOS INICIALES - USUARIOS
 -- Password: admin123 (hash con password_hash de PHP)
 -- Password: maria123 (hash con password_hash de PHP)
@@ -134,6 +173,23 @@ INSERT INTO gastos_fijos (user_id, nombre, monto) VALUES
 (1, 'Suscripción Netflix', 35000.00),
 (1, 'Gimnasio', 50000.00),
 (1, 'Seguro', 45000.00);
+
+-- ======================================
+-- DATOS INICIALES - TASAS DE CAMBIO
+-- Tasas aproximadas (actualizar según mercado)
+-- ======================================
+INSERT INTO tasas_cambio (moneda_origen, moneda_destino, tasa) VALUES
+('USD', 'PYG', 7350.00),
+('EUR', 'PYG', 8100.00),
+('PYG', 'PYG', 1.00);
+
+-- ======================================
+-- DATOS INICIALES - SUSCRIPCIONES (Ejemplos para admin)
+-- ======================================
+INSERT INTO suscripciones (user_id, nombre, monto, moneda, monto_pyg, icono, color, dia_cobro, descripcion) VALUES
+(1, 'Netflix', 15.99, 'USD', 117541.50, 'fa-film', '#e50914', 5, 'Streaming de películas y series'),
+(1, 'Spotify', 9.99, 'USD', 73426.50, 'fa-music', '#1db954', 10, 'Música en streaming'),
+(1, 'Amazon Prime', 14.99, 'USD', 110196.50, 'fa-amazon', '#ff9900', 15, 'Envíos y Prime Video');
 
 -- Configuración para María
 INSERT INTO configuracion (

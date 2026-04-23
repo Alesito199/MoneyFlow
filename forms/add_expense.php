@@ -60,6 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-receipt"></i>
                     <span>Gastos Fijos</span>
                 </a>
+                <a href="../dashboard/suscripciones_new.php" class="menu-item">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Suscripciones</span>
+                </a>
                 <a href="../dashboard/configuracion.php" class="menu-item">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>
