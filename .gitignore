@@ -51,3 +51,11 @@ files/
 # Testing
 phpunit.xml
 .phpunit.result.cache
+
+
+#API
+
+apis_n8n/N8N_WORKFLOW.md
+apis_n8n/QUICKSTART.md
+apis_n8n/README.md
+apis_n8n/workflow_n8n.json

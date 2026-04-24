@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoneyFlow - Test APIs N8N</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .api-section {
+            margin-bottom: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        
+        .api-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .api-key-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .api-key-info strong {
+            color: #856404;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        .response-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+        
+        .response-box.show {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .input-group textarea {
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 MoneyFlow - Test APIs N8N</h1>
+        <p class="subtitle">Prueba los endpoints REST para tu integración con N8N y Telegram</p>
+        
+        <div class="api-key-info">
+            <strong>🔑 API Key:</strong> moneyflow_n8n_key_2026<br>
+            <strong>⚠️ Nota:</strong> Cambia esta key en producción en config.php
+        </div>
+        
+        <!-- CATEGORÍAS -->
+        <div class="api-section">
+            <h2>📋 1. Categorías</h2>
+            <p>Obtener lista de categorías disponibles</p>
+            <div class="button-group">
+                <button class="test-button" onclick="testCategorias()">
+                    GET /categorias.php
+                </button>
+            </div>
+            <div id="response-categorias" class="response-box"></div>
+        </div>
+        
+        <!-- TIPOS -->
+        <div class="api-section">
+            <h2>🏷️ 2. Tipos de Gasto</h2>
+            <p>Obtener tipos de gasto (necesario, opcional, emergencia)</p>
+            <div class="button-group">
+                <button class="test-button" onclick="testTipos()">
+                    GET /tipos.php
+                </button>
+            </div>
+            <div id="response-tipos" class="response-box"></div>
+        </div>
+        
+        <!-- MÉTODOS -->
+        <div class="api-section">
+            <h2>💳 3. Métodos de Pago</h2>
+            <p>Obtener métodos de pago disponibles</p>
+            <div class="button-group">
+                <button class="test-button" onclick="testMetodos()">
+                    GET /metodos.php
+                </button>
+            </div>
+            <div id="response-metodos" class="response-box"></div>
+        </div>
+        
+        <!-- USUARIOS -->
+        <div class="api-section">
+            <h2>👤 4. Usuarios</h2>
+            <div class="input-group">
+                <label>User ID (opcional):</label>
+                <input type="number" id="user-id-query" placeholder="1">
+            </div>
+            <div class="button-group">
+                <button class="test-button" onclick="testUsuarios()">
+                    GET /usuarios.php
+                </button>
+                <button class="test-button" onclick="testUsuarioById()">
+                    GET por ID
+                </button>
+            </div>
+            <div id="response-usuarios" class="response-box"></div>
+        </div>
+        
+        <!-- GASTOS GET -->
+        <div class="api-section">
+            <h2>💰 5. Consultar Gastos</h2>
+            <div class="input-group">
+                <label>User ID:</label>
+                <input type="number" id="get-user-id" value="1">
+            </div>
+            <div class="input-group">
+                <label>Fecha Desde:</label>
+                <input type="date" id="get-fecha-desde">
+            </div>
+            <div class="input-group">
+                <label>Fecha Hasta:</label>
+                <input type="date" id="get-fecha-hasta">
+            </div>
+            <div class="button-group">
+                <button class="test-button" onclick="testGetGastos()">
+                    GET /gastos.php
+                </button>
+            </div>
+            <div id="response-get-gastos" class="response-box"></div>
+        </div>
+        
+        <!-- GASTOS POST -->
+        <div class="api-section">
+            <h2>➕ 6. Crear Gasto</h2>
+            <div class="input-group">
+                <label>User ID:</label>
+                <input type="number" id="post-user-id" value="1">
+            </div>
+            <div class="input-group">
+                <label>Descripción:</label>
+                <input type="text" id="post-descripcion" value="Test desde API" placeholder="Ej: Almuerzo">
+            </div>
+            <div class="input-group">
+                <label>Monto:</label>
+                <input type="number" id="post-monto" value="25.50" step="0.01">
+            </div>
+            <div class="input-group">
+                <label>Tipo:</label>
+                <select id="post-tipo">
+                    <option value="necesario">Necesario</option>
+                    <option value="opcional">Opcional</option>
+                    <option value="emergencia">Emergencia</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Categoría:</label>
+                <select id="post-categoria">
+                    <option value="comida">Comida</option>
+                    <option value="transporte">Transporte</option>
+                    <option value="salud">Salud</option>
+                    <option value="entretenimiento">Entretenimiento</option>
+                    <option value="servicios">Servicios</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Método:</label>
+                <select id="post-metodo">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="gourmet">Gourmet</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Fecha:</label>
+                <input type="date" id="post-fecha">
+            </div>
+            <div class="button-group">
+                <button class="test-button" onclick="testPostGasto()">
+                    POST /gastos.php
+                </button>
+            </div>
+            <div id="response-post-gasto" class="response-box"></div>
+        </div>
+        
+        <!-- RESUMEN -->
+        <div class="api-section">
+            <h2>📊 7. Resumen y Estadísticas</h2>
+            <div class="input-group">
+                <label>User ID:</label>
+                <input type="number" id="resumen-user-id" value="1">
+            </div>
+            <div class="input-group">
+                <label>Fecha Desde:</label>
+                <input type="date" id="resumen-fecha-desde">
+            </div>
+            <div class="input-group">
+                <label>Fecha Hasta:</label>
+                <input type="date" id="resumen-fecha-hasta">
+            </div>
+            <div class="button-group">
+                <button class="test-button" onclick="testResumen()">
+                    GET /resumen.php
+                </button>
+            </div>
+            <div id="response-resumen" class="response-box"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuración base
+        const API_BASE_URL = window.location.origin + '/MoneyFlow/apis_n8n/';
+        const API_KEY = 'moneyflow_n8n_key_2026';
+        
+        // Inicializar fechas con el mes actual
+        window.onload = function() {
+            const hoy = new Date();
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+            
+            const formatFecha = (fecha) => fecha.toISOString().split('T')[0];
+            
+            document.getElementById('get-fecha-desde').value = formatFecha(primerDia);
+            document.getElementById('get-fecha-hasta').value = formatFecha(hoy);
+            document.getElementById('post-fecha').value = formatFecha(hoy);
+            document.getElementById('resumen-fecha-desde').value = formatFecha(primerDia);
+            document.getElementById('resumen-fecha-hasta').value = formatFecha(hoy);
+        };
+        
+        // Función auxiliar para hacer requests
+        async function makeRequest(url, method = 'GET', body = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'X-API-Key': API_KEY,
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json();
+                return { status: response.status, data: data };
+            } catch (error) {
+                return { status: 0, data: { error: error.message } };
+            }
+        }
+        
+        // Mostrar respuesta en el box
+        function showResponse(elementId, status, data) {
+            const element = document.getElementById(elementId);
+            element.classList.add('show');
+            element.textContent = `Status: ${status}\n\n` + JSON.stringify(data, null, 2);
+        }
+        
+        // Test Categorías
+        async function testCategorias() {
+            const url = API_BASE_URL + 'categorias.php';
+            const { status, data } = await makeRequest(url);
+            showResponse('response-categorias', status, data);
+        }
+        
+        // Test Tipos
+        async function testTipos() {
+            const url = API_BASE_URL + 'tipos.php';
+            const { status, data } = await makeRequest(url);
+            showResponse('response-tipos', status, data);
+        }
+        
+        // Test Métodos
+        async function testMetodos() {
+            const url = API_BASE_URL + 'metodos.php';
+            const { status, data } = await makeRequest(url);
+            showResponse('response-metodos', status, data);
+        }
+        
+        // Test Usuarios
+        async function testUsuarios() {
+            const url = API_BASE_URL + 'usuarios.php';
+            const { status, data } = await makeRequest(url);
+            showResponse('response-usuarios', status, data);
+        }
+        
+        async function testUsuarioById() {
+            const userId = document.getElementById('user-id-query').value || '1';
+            const url = API_BASE_URL + 'usuarios.php?id=' + userId;
+            const { status, data } = await makeRequest(url);
+            showResponse('response-usuarios', status, data);
+        }
+        
+        // Test GET Gastos
+        async function testGetGastos() {
+            const userId = document.getElementById('get-user-id').value;
+            const fechaDesde = document.getElementById('get-fecha-desde').value;
+            const fechaHasta = document.getElementById('get-fecha-hasta').value;
+            
+            let url = API_BASE_URL + 'gastos.php?user_id=' + userId;
+            if (fechaDesde) url += '&fecha_desde=' + fechaDesde;
+            if (fechaHasta) url += '&fecha_hasta=' + fechaHasta;
+            
+            const { status, data } = await makeRequest(url);
+            showResponse('response-get-gastos', status, data);
+        }
+        
+        // Test POST Gasto
+        async function testPostGasto() {
+            const body = {
+                user_id: parseInt(document.getElementById('post-user-id').value),
+                fecha: document.getElementById('post-fecha').value,
+                tipo: document.getElementById('post-tipo').value,
+                categoria: document.getElementById('post-categoria').value,
+                descripcion: document.getElementById('post-descripcion').value,
+                monto: parseFloat(document.getElementById('post-monto').value),
+                metodo: document.getElementById('post-metodo').value
+            };
+            
+            const url = API_BASE_URL + 'gastos.php';
+            const { status, data } = await makeRequest(url, 'POST', body);
+            showResponse('response-post-gasto', status, data);
+        }
+        
+        // Test Resumen
+        async function testResumen() {
+            const userId = document.getElementById('resumen-user-id').value;
+            const fechaDesde = document.getElementById('resumen-fecha-desde').value;
+            const fechaHasta = document.getElementById('resumen-fecha-hasta').value;
+            
+            let url = API_BASE_URL + 'resumen.php?user_id=' + userId;
+            if (fechaDesde) url += '&fecha_desde=' + fechaDesde;
+            if (fechaHasta) url += '&fecha_hasta=' + fechaHasta;
+            
+            const { status, data } = await makeRequest(url);
+            showResponse('response-resumen', status, data);
+        }
+    </script>
+</body>
+</html>

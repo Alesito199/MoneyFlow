@@ -1,0 +1,63 @@
+# MoneyFlow APIs N8N - Configuración Apache
+
+# Habilitar CORS para N8N
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-Key"
+    Header always set Access-Control-Max-Age "3600"
+</IfModule>
+
+# Rewrite para URLs limpias (opcional)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /MoneyFlow/apis_n8n/
+    
+    # Si el archivo no existe, no hacer nada
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    
+    # Manejo de OPTIONS para CORS
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>
+
+# Seguridad: Ocultar información del servidor
+<IfModule mod_headers.c>
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# Limitar tamaño de subida
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+
+# Timeout para scripts largos
+php_value max_execution_time 60
+
+# Configuración de errores (cambiar en producción)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Proteger archivos de configuración
+<FilesMatch "^(config\.php|\.htaccess)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Prevenir listado de directorios
+Options -Indexes
+
+# Comprimir respuestas JSON
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/plain
+</IfModule>
+
+# Cache para archivos estáticos
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/json "access plus 0 seconds"
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
