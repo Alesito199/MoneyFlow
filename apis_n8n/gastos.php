@@ -10,7 +10,7 @@ require_once __DIR__ . '/config.php';
 validateApiKey();
 
 // Obtener conexión a BD
-$conn = getDbConnection();
+$conn = getApiConnection();
 
 // Obtener método HTTP
 $method = $_SERVER['REQUEST_METHOD'];

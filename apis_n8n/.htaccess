@@ -28,17 +28,6 @@
     Header unset X-Powered-By
 </IfModule>
 
-# Limitar tamaño de subida
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
-
-# Timeout para scripts largos
-php_value max_execution_time 60
-
-# Configuración de errores (cambiar en producción)
-php_flag display_errors Off
-php_flag log_errors On
-
 # Proteger archivos de configuración
 <FilesMatch "^(config\.php|\.htaccess)$">
     Order allow,deny

@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     ApiResponse::error('Método no permitido. Solo GET', 405);
 }
 
-$conn = getDbConnection();
+$conn = getApiConnection();
 
 try {
     // Si se solicita un usuario específico

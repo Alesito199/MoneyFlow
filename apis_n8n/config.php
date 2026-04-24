@@ -105,10 +105,11 @@ function validateUser($userId, $conn) {
 
 /**
  * Obtener conexión a la base de datos
+ * Usa la función getDBConnection() del archivo database.php principal
  */
-function getDbConnection() {
-    $database = new Database();
-    $conn = $database->getConnection();
+function getApiConnection() {
+    // Usar la función existente en database.php
+    $conn = getDBConnection();
     
     if (!$conn) {
         ApiResponse::error('Error al conectar con la base de datos', 500);
