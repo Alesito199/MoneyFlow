@@ -219,21 +219,30 @@ function analizarRitmoGasto($userId = null) {
     $porcentajePeriodo = ($diasTranscurridos / $diasTotales) * 100;
     
     // Calcular gasto esperado según el porcentaje del periodo
+    // IMPORTANTE: Excluimos los gastos fijos porque son predecibles y no deben generar alertas
     $presupuestoTotal = $estado['saldo_inicial'] + $estado['gourmet_inicial'] - $estado['objetivo_ahorro'];
-    $gastoEsperado = ($presupuestoTotal * $porcentajePeriodo) / 100;
     
-    $diferencia = $estado['total_gastado'] - $gastoEsperado;
-    $enRiesgo = $diferencia > ($presupuestoTotal * 0.1); // Más del 10% sobre lo esperado
+    // Restar gastos fijos del presupuesto total (ya que son gastos esperados)
+    $presupuestoVariableTotal = $presupuestoTotal - $estado['gastos_fijos'];
+    
+    // Calcular gasto esperado solo para gastos variables
+    $gastoEsperado = ($presupuestoVariableTotal * $porcentajePeriodo) / 100;
+    
+    // Comparar solo gastos variables (excluimos gastos fijos del análisis)
+    $gastoRealVariable = $estado['total_gastado'] - $estado['gastos_fijos'];
+    
+    $diferencia = $gastoRealVariable - $gastoEsperado;
+    $enRiesgo = $presupuestoVariableTotal > 0 && $diferencia > ($presupuestoVariableTotal * 0.15); // Más del 15% sobre lo esperado
     
     $mensaje = $enRiesgo 
-        ? 'Estás gastando más rápido de lo esperado' 
+        ? 'Estás gastando más rápido de lo esperado en gastos variables' 
         : 'Tu ritmo de gasto es saludable';
     
     return [
         'dias_totales' => $diasTotales,
         'dias_transcurridos' => $diasTranscurridos,
         'gasto_esperado' => round($gastoEsperado, 2),
-        'gasto_real' => $estado['total_gastado'],
+        'gasto_real' => $gastoRealVariable,
         'diferencia' => round($diferencia, 2),
         'porcentaje_periodo' => round($porcentajePeriodo, 2),
         'en_riesgo' => $enRiesgo,
