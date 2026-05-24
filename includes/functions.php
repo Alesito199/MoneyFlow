@@ -653,6 +653,228 @@ function obtenerGastoFijoPorId($id) {
     }
 }
 
+// ======================================
+// FUNCIONES DE INGRESOS EXTRA
+// ======================================
+
+/**
+ * Obtener todos los ingresos extra de un usuario
+ * @param int $userId
+ * @return array
+ */
+function obtenerIngresosExtra($userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT * FROM ingresos_extra 
+            WHERE user_id = ? 
+            ORDER BY fecha DESC, created_at DESC
+        ");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Calcular total de ingresos extra de un usuario
+ * @param int $userId
+ * @param string $fechaInicio (opcional)
+ * @param string $fechaFin (opcional)
+ * @return float
+ */
+function calcularTotalIngresosExtra($userId = null, $fechaInicio = null, $fechaFin = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        
+        if ($fechaInicio && $fechaFin) {
+            $stmt = $pdo->prepare("
+                SELECT COALESCE(SUM(monto), 0) as total 
+                FROM ingresos_extra 
+                WHERE user_id = ? AND fecha BETWEEN ? AND ?
+            ");
+            $stmt->execute([$userId, $fechaInicio, $fechaFin]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT COALESCE(SUM(monto), 0) as total 
+                FROM ingresos_extra 
+                WHERE user_id = ?
+            ");
+            $stmt->execute([$userId]);
+        }
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return floatval($result['total']);
+    } catch (PDOException $e) {
+        return 0;
+    }
+}
+
+/**
+ * Registrar un nuevo ingreso extra
+ * @param string $fecha
+ * @param string $descripcion
+ * @param float $monto
+ * @param string $categoria
+ * @param string $notas
+ * @param int $userId
+ * @return bool
+ */
+function registrarIngresoExtra($fecha, $descripcion, $monto, $categoria = 'otro', $notas = null, $userId = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    // Validaciones básicas
+    if (empty($fecha) || empty($descripcion) || $monto <= 0) {
+        return false;
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            INSERT INTO ingresos_extra (user_id, fecha, descripcion, monto, categoria, notas) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        
+        return $stmt->execute([
+            $userId,
+            $fecha,
+            $descripcion,
+            $monto,
+            $categoria,
+            $notas
+        ]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Actualizar un ingreso extra existente
+ * @param int $id
+ * @param string $fecha
+ * @param string $descripcion
+ * @param float $monto
+ * @param string $categoria
+ * @param string $notas
+ * @return bool
+ */
+function actualizarIngresoExtra($id, $fecha, $descripcion, $monto, $categoria, $notas = null) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            UPDATE ingresos_extra 
+            SET fecha = ?, descripcion = ?, monto = ?, categoria = ?, notas = ?
+            WHERE id = ? AND user_id = ?
+        ");
+        return $stmt->execute([
+            $fecha,
+            $descripcion,
+            $monto,
+            $categoria,
+            $notas,
+            $id,
+            getUserId()
+        ]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Eliminar un ingreso extra
+ * @param int $id
+ * @return bool
+ */
+function eliminarIngresoExtra($id) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            DELETE FROM ingresos_extra 
+            WHERE id = ? AND user_id = ?
+        ");
+        return $stmt->execute([$id, getUserId()]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Obtener un ingreso extra por ID
+ * @param int $id
+ * @return array|false
+ */
+function obtenerIngresoExtraPorId($id) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("
+            SELECT * FROM ingresos_extra 
+            WHERE id = ? AND user_id = ?
+        ");
+        $stmt->execute([$id, getUserId()]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Obtener categorías de ingresos extra con totales
+ * @param int $userId
+ * @param string $fechaInicio (opcional)
+ * @param string $fechaFin (opcional)
+ * @return array
+ */
+function obtenerIngresosExtraPorCategoria($userId = null, $fechaInicio = null, $fechaFin = null) {
+    if ($userId === null) {
+        $userId = getUserId();
+    }
+    
+    try {
+        $pdo = getDBConnection();
+        
+        if ($fechaInicio && $fechaFin) {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    categoria,
+                    COUNT(*) as cantidad,
+                    SUM(monto) as total
+                FROM ingresos_extra 
+                WHERE user_id = ? AND fecha BETWEEN ? AND ?
+                GROUP BY categoria
+                ORDER BY total DESC
+            ");
+            $stmt->execute([$userId, $fechaInicio, $fechaFin]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    categoria,
+                    COUNT(*) as cantidad,
+                    SUM(monto) as total
+                FROM ingresos_extra 
+                WHERE user_id = ?
+                GROUP BY categoria
+                ORDER BY total DESC
+            ");
+            $stmt->execute([$userId]);
+        }
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
 /**
  * Obtener gastos por categoría para gráfico
  * @param string $fechaInicio

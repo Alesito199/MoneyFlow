@@ -50,6 +50,10 @@ $totalSuscripciones = calcularTotalSuscripciones();
 // Obtener ahorro acumulado histórico
 $ahorroAcumulado = obtenerAhorroAcumulado();
 $ahorroActual = calcularAhorroPeriodoActual();
+
+// Obtener ingresos extra del período actual
+$ingresosExtraPeriodo = calcularTotalIngresosExtra(null, $estado['fecha_inicio'], $estado['fecha_fin']);
+$totalIngresosExtra = calcularTotalIngresosExtra();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -106,6 +110,10 @@ $ahorroActual = calcularAhorroPeriodoActual();
                 <a href="suscripciones_new.php" class="menu-item">
                     <i class="fas fa-sync-alt"></i>
                     <span>Suscripciones</span>
+                </a>
+                <a href="ingresos_extra.php" class="menu-item">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <span>Ingresos Extra</span>
                 </a>
                 <a href="configuracion.php" class="menu-item">
                     <i class="fas fa-cog"></i>
@@ -217,6 +225,26 @@ $ahorroActual = calcularAhorroPeriodoActual();
                         <div class="kpi-label">Del periodo actual</div>
                     </div>
                 </div>
+
+                <?php if ($ingresosExtraPeriodo > 0): ?>
+                <div class="kpi-card" style="border: 2px solid #059669;">
+                    <div class="kpi-icon" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <h3>Ingresos Extra</h3>
+                        <div class="kpi-value" style="color: #059669;">
+                            <?php echo formatearMoneda($ingresosExtraPeriodo); ?>
+                        </div>
+                        <div class="kpi-label">
+                            Del periodo actual
+                            <a href="ingresos_extra.php" style="color: #059669; text-decoration: none; font-weight: 600;">
+                                <i class="fas fa-arrow-right"></i> Ver detalle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <div class="kpi-card">
                     <div class="kpi-icon" style="background: #4b5563;">

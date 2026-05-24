@@ -79,6 +79,10 @@ $gastos = obtenerGastos($config['fecha_inicio'], $config['fecha_fin']);
                     <i class="fas fa-sync-alt"></i>
                     <span>Suscripciones</span>
                 </a>
+                <a href="ingresos_extra.php" class="menu-item">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <span>Ingresos Extra</span>
+                </a>
                 <a href="configuracion.php" class="menu-item">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>

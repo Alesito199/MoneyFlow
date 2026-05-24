@@ -81,6 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-sync-alt"></i>
                     <span>Suscripciones</span>
                 </a>
+                <a href="../dashboard/ingresos_extra.php" class="menu-item">
+                    <i class="fas fa-hand-holding-usd"></i>
+                    <span>Ingresos Extra</span>
+                </a>
                 <a href="../dashboard/configuracion.php" class="menu-item">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>
